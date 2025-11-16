@@ -1,13 +1,11 @@
 package conexion;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.*;
 import java.util.Properties;
 
-public class ConexionBD {
+public class ConexionBBDD {
 
     private static String url;
     private static String user;
@@ -18,7 +16,7 @@ public class ConexionBD {
     }
 
     public static void setUrl(String url) {
-        ConexionBD.url = url;
+        ConexionBBDD.url = url;
     }
 
     public static String getUser() {
@@ -26,7 +24,7 @@ public class ConexionBD {
     }
 
     public static void setUser(String user) {
-        ConexionBD.user = user;
+        ConexionBBDD.user = user;
     }
 
     public static String getPassword() {
@@ -34,7 +32,7 @@ public class ConexionBD {
     }
 
     public static void setPassword(String password) {
-        ConexionBD.password = password;
+        ConexionBBDD.password = password;
     }
 
     public static void iniciarConexion() {
@@ -42,7 +40,7 @@ public class ConexionBD {
         final String RUTADELARCHIVO = "src/main/resources/config.properties";
         Properties prop = new Properties();
 
-        try (InputStream input = ConexionBD.class.getClassLoader().getResourceAsStream("config.properties")) {
+        try (InputStream input = ConexionBBDD.class.getClassLoader().getResourceAsStream("config.properties")) {
 
             // Cargar las propiedades desde el archivo
             prop.load(input);

@@ -57,4 +57,49 @@ public class Util {
         }
         return texto;
     }
+
+    public static double pedirDecimal(Scanner scanner, String mensaje) {
+        System.out.println(mensaje);
+        while (!scanner.hasNextDouble()) {
+            System.out.println("Entrada invalida. " + mensaje);
+            scanner.next(); // Limpiar la entrada invalida
+        }
+        double numero = scanner.nextDouble();
+        scanner.nextLine(); // Limpiar el buffer
+
+        return numero;
+    }
+
+    public static double pedirDecimalMinimo(Scanner scanner, String mensaje, double min) {
+        double numero;
+        do {
+            numero = pedirDecimal(scanner, mensaje + " (mínimo " + min + "):");
+            if (numero < min) {
+                System.out.println("Número menor que el mínimo. Inténtalo de nuevo.");
+            }
+        } while (numero < min);
+        return numero;
+    }
+
+    public static double pedirDecimalMaximo(Scanner scanner, String mensaje, double max) {
+        double numero;
+        do {
+            numero = pedirDecimal(scanner, mensaje + " (máximo " + max + "):");
+            if (numero > max) {
+                System.out.println("Número mayor que el máximo. Inténtalo de nuevo.");
+            }
+        } while (numero > max);
+        return numero;
+    }  
+
+    public static double pedirDecimalConRango(Scanner scanner, String mensaje, double min, double max) {
+        double numero;
+        do {
+            numero = pedirDecimal(scanner, mensaje + " (entre " + min + " y " + max + "):");
+            if (numero < min || numero > max) {
+                System.out.println("Número fuera de rango. Inténtalo de nuevo.");
+            }
+        } while (numero < min || numero > max);
+        return numero;
+    }
 }

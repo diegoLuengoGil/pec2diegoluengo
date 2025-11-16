@@ -2,6 +2,7 @@ package com.inventario;
 
 import java.util.Scanner;
 
+import com.inventario.clientes.GestionDeClientes;
 import com.inventario.productos.GestionDeProductos;
 import com.inventario.util.Util;
 
@@ -43,11 +44,11 @@ public class Main {
 
             switch (opcion) {
                 case 1 -> GestionDeProductos.menuProductos(scanner);
-                case 2 -> menuClientes();
+                case 2 -> GestionDeClientes.menuClientes(scanner);
                 case 3 -> menuVentas();
                 case 4 -> menuConsultasVentas();
                 case 5 -> menuInformesAvanzados();
-                case 0 -> System.out.println("\nSaliendo del programa... 👋");
+                case 0 -> System.out.println("\nSaliendo del programa...");
                 default -> System.out.println("Opción no válida.");
             }
         } while (opcion != 0);

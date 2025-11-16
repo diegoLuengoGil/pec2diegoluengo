@@ -3,6 +3,36 @@ package com.inventario.util;
 import java.util.Scanner;
 
 public class Util {
+
+    public static int pedirSiNO(Scanner scanner, String mensaje) {
+        int opcion;
+        do {
+            System.out.println(mensaje + " (1: Sí, 2: No):");
+            opcion = pedirNumero(scanner, "");
+            if (opcion != 1 && opcion != 2) {
+                System.out.println("Opción inválida. Por favor, ingresa 1 para Sí o 2 para No.");
+            }
+        } while (opcion != 1 && opcion != 2);
+        return opcion;
+    }
+
+    public static boolean pedirSiNOBoolean(Scanner scanner, String mensaje) {
+        int opcion;
+        boolean esSi = false;
+        do {
+            System.out.println(mensaje + " (1: Sí, 2: No):");
+            opcion = pedirNumero(scanner, "");
+            if (opcion != 1 && opcion != 2) {
+                System.out.println("Opción inválida. Por favor, ingresa 1 para Sí o 2 para No.");
+            }
+        } while (opcion != 1 && opcion != 2);
+
+        if (opcion == 1) {
+            esSi = true;
+        }
+        return esSi;
+    }
+
     public static int pedirNumero(Scanner scanner, String mensaje) {
         System.out.println(mensaje);
         while (!scanner.hasNextInt()) {
@@ -90,7 +120,7 @@ public class Util {
             }
         } while (numero > max);
         return numero;
-    }  
+    }
 
     public static double pedirDecimalConRango(Scanner scanner, String mensaje, double min, double max) {
         double numero;

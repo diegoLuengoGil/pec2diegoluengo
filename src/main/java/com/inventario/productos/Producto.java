@@ -1,5 +1,7 @@
 package com.inventario.productos;
 
+import com.inventario.excepciones.DatoInvalidoException;
+
 public class Producto {
     private int id;
     private String nombre;
@@ -7,18 +9,11 @@ public class Producto {
     private double precio;
     private int stock;
 
-    public Producto(int idProducto, String nombre, String descripcion, double precio, int stock) {
+    public Producto(int idProducto, String nombre, String descripcion, double precio, int stock) throws DatoInvalidoException {
 
-        // Validación de restricciones de la BD (stock >= 0 y no nulos)
-        // if (nombre == null || nombre.trim().isEmpty()) {
-        //     throw new IllegalArgumentException("El nombre del producto no puede ser nulo.");
-        // }
-        // if (precio < 0) {
-        //     throw new IllegalArgumentException("El precio del producto debe ser un valor válido y no puede ser nulo.");
-        // }
-        // if (stock < 0) {
-        //     throw new IllegalArgumentException("El stock no puede ser negativo.");
-        // }
+        validarNombre(nombre);
+        validarPrecio(precio);
+        validarStock(stock);
 
         this.id = idProducto;
         this.nombre = nombre;
@@ -28,24 +23,35 @@ public class Producto {
 
     }
 
-    public Producto(String nombre, String descripcion, double precio, int stock) {
+    public Producto(String nombre, String descripcion, double precio, int stock) throws DatoInvalidoException {
 
-
-        if (nombre == null || nombre.trim().isEmpty()) {
-            throw new IllegalArgumentException("El nombre del producto no puede estar vacio.");
-        }
-        if (precio < 0) {
-            throw new IllegalArgumentException("El precio del producto debe ser un valor válido y no puede ser nulo.");
-        }
-        if (stock < 0) {
-            throw new IllegalArgumentException("El stock no puede ser negativo.");
-        }
+        validarNombre(nombre);
+        validarPrecio(precio);
+        validarStock(stock);
 
         this.nombre = nombre;
         this.descripcion = descripcion;
         this.precio = precio;
         this.stock = stock;
 
+    }
+
+    private void validarNombre(String nombre) throws DatoInvalidoException {
+        if (nombre == null || nombre.trim().isEmpty()) {
+            throw new DatoInvalidoException("El nombre del producto no puede estar vacio.");
+        }
+    }
+
+    private void validarPrecio(double precio) throws DatoInvalidoException {
+        if (precio < 0) {
+            throw new DatoInvalidoException("El precio del producto debe ser un valor válido y no puede ser nulo.");
+        }
+    }
+    
+    private void validarStock(int stock) throws DatoInvalidoException {
+        if (stock < 0) {
+            throw new DatoInvalidoException("El stock no puede ser negativo.");
+        }
     }
 
     public int getId() {
@@ -60,7 +66,8 @@ public class Producto {
         return nombre;
     }
 
-    public void setNombre(String nombre) {
+    public void setNombre(String nombre)throws DatoInvalidoException {
+        validarNombre(nombre);
         this.nombre = nombre;
     }
 
@@ -76,7 +83,8 @@ public class Producto {
         return precio;
     }
 
-    public void setPrecio(double precio) {
+    public void setPrecio(double precio) throws DatoInvalidoException {
+        validarPrecio(precio);
         this.precio = precio;
     }
 
@@ -84,10 +92,9 @@ public class Producto {
         return stock;
     }
 
-    public void setStock(int stock) {
+    public void setStock(int stock) throws DatoInvalidoException {
+        validarStock(stock);
         this.stock = stock;
     }
-
-    
 
 }

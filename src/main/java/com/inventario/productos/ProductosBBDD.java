@@ -8,9 +8,37 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import conexion.ConexionBBDD;
+import com.inventario.conexion.ConexionBBDD;
+import com.inventario.excepciones.DatoInvalidoException;
 
 public class ProductosBBDD {
+
+    public static List<Producto> buscarPorCampo(String campo, Object valor) throws SQLException, DatoInvalidoException {
+        String sql = "SELECT id_producto, nombre, descripcion, precio, stock "
+                + "FROM producto WHERE " + campo + " = ?";
+
+        List<Producto> productos = new ArrayList<>();
+
+        try (Connection con = ConexionBBDD.obtenerConexion();
+                PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setObject(1, valor);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Producto p = new Producto(
+                            rs.getInt("id_producto"),
+                            rs.getString("nombre"),
+                            rs.getString("descripcion"),
+                            rs.getDouble("precio_venta"),
+                            rs.getInt("stock"));
+                    productos.add(p);
+                }
+            }
+        }
+
+        return productos;
+    }
 
     public static boolean actualizarProductoCampo(int idProducto, String campo, Object valor) throws SQLException {
         String sql = "UPDATE producto SET " + campo + " = ? WHERE id_producto = ?";
@@ -22,6 +50,11 @@ public class ProductosBBDD {
             ps.setInt(2, idProducto);
 
             int filasAfectadas = ps.executeUpdate();
+            if (filasAfectadas > 0) {
+                System.out.println("Producto actualizado correctamente.");
+            } else {
+                System.out.println("Producto no actualizado");
+            }
             return filasAfectadas > 0;
         }
     }
@@ -41,7 +74,7 @@ public class ProductosBBDD {
         }
     }
 
-    public static List<Producto> obtenerProductos() throws SQLException {
+    public static List<Producto> obtenerProductos() throws SQLException, DatoInvalidoException {
         List<Producto> productos = new ArrayList<>();
         String sql = "SELECT id_producto, nombre, descripcion, precio, stock FROM producto";
 

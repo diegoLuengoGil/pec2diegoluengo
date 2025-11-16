@@ -1,4 +1,4 @@
-package conexion;
+package com.inventario.conexion;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,16 +36,15 @@ public class ConexionBBDD {
     }
 
     public static void iniciarConexion() {
-        // La ruta corregida según la estructura del proyecto
         final String RUTADELARCHIVO = "src/main/resources/config.properties";
         Properties prop = new Properties();
 
         try (InputStream input = ConexionBBDD.class.getClassLoader().getResourceAsStream("config.properties")) {
 
-            // Cargar las propiedades desde el archivo
+
             prop.load(input);
 
-            // Usar los setters para asignar los atributos estáticos
+
             setUrl(prop.getProperty("db.url"));
             setUser(prop.getProperty("db.user"));
             setPassword(prop.getProperty("db.password"));

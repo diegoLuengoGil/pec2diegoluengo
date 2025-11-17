@@ -42,44 +42,48 @@ public class GestionDeProductos {
         System.out.println("\n--- ACTUALIZAR PRODUCTO ---");
 
         try {
-            listarProductos(); // Mostrar productos primero
+            if (ProductosBBDD.contarProductos() > 0) {
+                listarProductos();
 
-            int id = Util.pedirNumeroMinimo(scanner, "Introduce el ID del producto a actualizar:", 1);
+                int id = Util.pedirNumeroMinimo(scanner, "Introduce el ID del producto a actualizar:", 1);
 
-            int opcion;
-            do {
-                System.out.println("\n¿Qué campo deseas actualizar?");
-                System.out.println("1. Nombre");
-                System.out.println("2. Descripción");
-                System.out.println("3. Precio de venta");
-                System.out.println("4. Stock");
-                System.out.println("0. Salir");
-                System.out.print("Opción: ");
+                int opcion;
+                do {
+                    System.out.println("\n¿Qué campo deseas actualizar?");
+                    System.out.println("1. Nombre");
+                    System.out.println("2. Descripción");
+                    System.out.println("3. Precio de venta");
+                    System.out.println("4. Stock");
+                    System.out.println("0. Salir");
+                    System.out.print("Opción: ");
 
-                opcion = Util.pedirNumeroMinimo(scanner, "", 1);
+                    opcion = Util.pedirNumeroMinimo(scanner, "", 1);
 
-                switch (opcion) {
-                    case 1 -> {
-                        String nuevoNombre = Util.pedirTexto(scanner, "Nuevo nombre:");
-                        ProductosBBDD.actualizarProductoCampo(id, "nombre", nuevoNombre);
+                    switch (opcion) {
+                        case 1 -> {
+                            String nuevoNombre = Util.pedirTexto(scanner, "Nuevo nombre:");
+                            ProductosBBDD.actualizarProductoCampo(id, "nombre", nuevoNombre);
+                        }
+                        case 2 -> {
+                            String nuevaDesc = Util.pedirTexto(scanner, "Nueva descripción:");
+                            ProductosBBDD.actualizarProductoCampo(id, "descripcion", nuevaDesc);
+                        }
+                        case 3 -> {
+                            double nuevoPrecio = Util.pedirDecimalMinimo(scanner, "Nuevo precio:", 0);
+                            ProductosBBDD.actualizarProductoCampo(id, "precio", nuevoPrecio);
+                        }
+                        case 4 -> {
+                            int nuevoStock = Util.pedirNumeroMinimo(scanner, "Nuevo stock:", 0);
+                            ProductosBBDD.actualizarProductoCampo(id, "stock", nuevoStock);
+                        }
+                        case 0 -> System.out.println("Volviendo al menú anterior...");
+                        default -> System.out.println("Opción no válida.");
                     }
-                    case 2 -> {
-                        String nuevaDesc = Util.pedirTexto(scanner, "Nueva descripción:");
-                        ProductosBBDD.actualizarProductoCampo(id, "descripcion", nuevaDesc);
-                    }
-                    case 3 -> {
-                        double nuevoPrecio = Util.pedirDecimalMinimo(scanner, "Nuevo precio:", 0);
-                        ProductosBBDD.actualizarProductoCampo(id, "precio", nuevoPrecio);
-                    }
-                    case 4 -> {
-                        int nuevoStock = Util.pedirNumeroMinimo(scanner, "Nuevo stock:", 0);
-                        ProductosBBDD.actualizarProductoCampo(id, "stock", nuevoStock);
-                    }
-                    case 0 -> System.out.println("Volviendo al menú anterior...");
-                    default -> System.out.println("Opción no válida.");
-                }
 
-            } while (opcion != 0);
+                } while (opcion != 0);
+            } else {
+                System.out.println("No hay productos registrados.");
+            }
 
         } catch (SQLException e) {
             System.err.println("Error al actualizar el producto en la base de datos: " + e.getMessage());
@@ -92,19 +96,21 @@ public class GestionDeProductos {
         System.out.println("\n--- ELIMINAR PRODUCTO ---");
 
         try {
-            // Listamos productos para que el usuario vea los IDs
-            listarProductos();
+            if (ProductosBBDD.contarProductos() > 0) {
+                listarProductos();
 
-            int id = Util.pedirNumero(scanner, "Introduce el ID del producto a eliminar:");
+                int id = Util.pedirNumero(scanner, "Introduce el ID del producto a eliminar:");
 
-            boolean eliminado = ProductosBBDD.eliminarProducto(id);
+                boolean eliminado = ProductosBBDD.eliminarProducto(id);
 
-            if (eliminado) {
-                System.out.println("Producto eliminado correctamente.");
+                if (eliminado) {
+                    System.out.println("Producto eliminado correctamente.");
+                } else {
+                    System.out.println("No se encontró ningún producto con ese ID.");
+                }
             } else {
-                System.out.println("No se encontró ningún producto con ese ID.");
+                System.out.println("No hay productos registrados.");
             }
-
         } catch (SQLException e) {
             System.err.println("Error al eliminar el producto en la base de datos: " + e.getMessage());
         } catch (Exception e) {
@@ -112,31 +118,25 @@ public class GestionDeProductos {
         }
     }
 
-    private static void listarProductos() {
+    public static void listarProductos() throws SQLException {
         System.out.println("\n--- LISTADO DE PRODUCTOS ---");
 
-        try {
-            List<Producto> productos = ProductosBBDD.obtenerProductos();
+        List<Producto> productos = ProductosBBDD.obtenerProductos();
 
-            if (productos.isEmpty()) {
-                System.out.println("No hay productos en la base de datos.");
-            } else {
+        if (productos.isEmpty()) {
+            System.out.println("No hay productos en la base de datos.");
+        } else {
 
-                System.out.printf("%-5s %-20s %-30s %-10s %-5s%n", "ID", "Nombre", "Descripción", "Precio", "Stock");
-                System.out.println("---------------------------------------------------------------------");
+            System.out.printf("%-5s %-20s %-30s %-10s %-5s%n", "ID", "Nombre", "Descripción", "Precio", "Stock");
+            System.out.println("---------------------------------------------------------------------");
 
-                for (Producto producto : productos) {
-                    System.out.printf("%-5d %-20s %-30s %-10.2f %-5d%n",
-                            producto.getId(), producto.getNombre(), producto.getDescripcion(), producto.getPrecio(),
-                            producto.getStock());
-                }
+            for (Producto producto : productos) {
+                System.out.printf("%-5d %-20s %-30s %-10.2f %-5d%n",
+                        producto.getId(), producto.getNombre(), producto.getDescripcion(), producto.getPrecio(),
+                        producto.getStock());
             }
-
-        } catch (SQLException e) {
-            System.err.println("Error al listar el producto con la base de datos: " + e.getMessage());
-        } catch (Exception e) {
-            System.err.println("Error inesperado: " + e.getMessage());
         }
+
     }
 
     private static void insertarProducto(Scanner scanner) {
@@ -155,7 +155,7 @@ public class GestionDeProductos {
             ProductosBBDD.insertarProducto(nuevoProducto);
             System.out.println("Producto insertado correctamente: " + nuevoProducto.getNombre());
 
-        }catch (SQLException e) {
+        } catch (SQLException e) {
             System.err.println("Error al insertar el producto en la base de datos: " + e.getMessage());
         } catch (DatoInvalidoException e) {
             System.err.println("Error de dato inválido: " + e.getMessage());
@@ -178,13 +178,19 @@ public class GestionDeProductos {
             System.out.println("===================================");
             System.out.print("Selecciona una opción: ");
 
-            opcion = Util.pedirNumeroConRango(scanner, null, 0, 5);
+            opcion = Util.pedirNumeroConRango(scanner, "", 0, 5);
 
             switch (opcion) {
                 case 1 -> insertarProducto(scanner);
                 case 2 -> actualizarProducto(scanner);
                 case 3 -> eliminarProducto(scanner);
-                case 4 -> listarProductos();
+                case 4 -> {
+                    try {
+                        listarProductos();
+                    } catch (SQLException e) {
+                        System.err.println("Error al listar productos: " + e.getMessage());
+                    }
+                }
                 case 5 -> buscarProductoPorId(scanner);
                 case 0 -> System.out.println("Volviendo al menú principal...");
                 default -> System.out.println("Opción no válida.");

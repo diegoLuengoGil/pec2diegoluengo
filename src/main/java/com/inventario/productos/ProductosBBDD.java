@@ -13,6 +13,22 @@ import com.inventario.excepciones.DatoInvalidoException;
 
 public class ProductosBBDD {
 
+        public static int contarProductos() throws SQLException {
+        String sql = "SELECT COUNT(*) FROM producto";
+        int count = 0;
+
+        // Asumiendo que ConexionBBDD.obtenerConexion() funciona
+        try (Connection con = ConexionBBDD.obtenerConexion();
+                Statement st = con.createStatement();
+                ResultSet rs = st.executeQuery(sql)) {
+
+            if (rs.next()) {
+                count = rs.getInt(1); // El COUNT(*) es la primera columna
+            }
+        }
+        return count;
+    }
+
     public static List<Producto> buscarPorCampo(String campo, Object valor) throws SQLException, DatoInvalidoException {
         String sql = "SELECT id_producto, nombre, descripcion, precio, stock "
                 + "FROM producto WHERE " + campo + " = ?";
@@ -30,7 +46,7 @@ public class ProductosBBDD {
                             rs.getInt("id_producto"),
                             rs.getString("nombre"),
                             rs.getString("descripcion"),
-                            rs.getDouble("precio_venta"),
+                            rs.getDouble("precio"),
                             rs.getInt("stock"));
                     productos.add(p);
                 }
@@ -74,7 +90,7 @@ public class ProductosBBDD {
         }
     }
 
-    public static List<Producto> obtenerProductos() throws SQLException, DatoInvalidoException {
+    public static List<Producto> obtenerProductos() throws SQLException {
         List<Producto> productos = new ArrayList<>();
         String sql = "SELECT id_producto, nombre, descripcion, precio, stock FROM producto";
 
@@ -83,13 +99,23 @@ public class ProductosBBDD {
                 ResultSet rs = st.executeQuery(sql);) {
 
             while (rs.next()) {
-                Producto p = new Producto(
-                        rs.getInt("id_producto"),
-                        rs.getString("nombre"),
-                        rs.getString("descripcion"),
-                        rs.getDouble("precio"),
-                        rs.getInt("stock"));
-                productos.add(p);
+                try {
+                    Producto p = new Producto(
+                            rs.getInt("id_producto"),
+                            rs.getString("nombre"),
+                            rs.getString("descripcion"),
+                            rs.getDouble("precio"),
+                            rs.getInt("stock"));
+
+                    productos.add(p);
+
+                } catch (DatoInvalidoException e) {
+                    // ¡Añadir gestión de errores aquí!
+                    int idInvalido = rs.getInt("id_producto");
+                    System.err.println("ERROR de datos en el Producto ID " + idInvalido + ": " + e.getMessage()
+                            + ". Este producto ha sido OMITIDO de la lista.");
+                    // continue es implícito aquí, el bucle pasa al siguiente rs.next()
+                }
             }
         }
 

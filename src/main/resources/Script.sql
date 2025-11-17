@@ -1,0 +1,84 @@
+-- ======================================
+-- Script: Creación de base de datos
+-- Proyecto: Gestor de inventario y ventas
+-- ======================================
+
+-- Crear base de datos
+DROP DATABASE IF EXISTS tienda;
+CREATE DATABASE IF NOT EXISTS tienda;
+USE tienda;
+
+-- ======================================
+-- Tabla: Producto
+-- ======================================
+CREATE TABLE IF NOT EXISTS Producto (
+    id_producto INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion VARCHAR(255),
+    precio DECIMAL(10,2) NOT NULL,
+    stock INT NOT NULL CHECK (stock >= 0)
+);
+
+-- ======================================
+-- Tabla: Cliente
+-- ======================================
+CREATE TABLE IF NOT EXISTS Cliente (
+    id_cliente INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    telefono VARCHAR(20) NOT NULL,
+    dinero int NOT NULL,
+    CONSTRAINT chk_dinero_positivo CHECK (dinero >= 0)
+);
+
+-- ======================================
+-- Tabla: Venta
+-- ======================================
+CREATE TABLE IF NOT EXISTS Venta (
+    id_venta INT AUTO_INCREMENT PRIMARY KEY,
+    id_cliente INT NOT NULL,
+    FOREIGN KEY (id_cliente) REFERENCES Cliente(id_cliente) ON DELETE CASCADE
+);
+
+-- ======================================
+-- Tabla: DetalleVenta
+-- ======================================
+CREATE TABLE IF NOT EXISTS DetalleVenta (
+    id_detalle INT AUTO_INCREMENT PRIMARY KEY,
+    id_venta INT NOT NULL,
+    id_producto INT NOT NULL,
+    cantidad INT NOT NULL CHECK (cantidad > 0),
+    precio_unitario DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (id_venta) REFERENCES Venta(id_venta) ON DELETE CASCADE,
+    FOREIGN KEY (id_producto) REFERENCES Producto(id_producto) ON DELETE CASCADE
+);
+
+
+DELIMITER //
+CREATE PROCEDURE RegistrarDetalleVenta(
+    IN p_idVenta INT,         
+    IN p_idProducto INT,      
+    IN p_cantidad INT,        
+    IN p_precioUnitario DECIMAL(10, 2), 
+    OUT p_estado INT          
+)
+BEGIN
+    DECLARE stock_actual INT;
+    
+    SELECT stock INTO stock_actual 
+    FROM producto 
+    WHERE id_producto = p_idProducto;
+    
+    IF stock_actual IS NULL THEN
+        SET p_estado = -2; -- Producto no encontrado
+    ELSEIF stock_actual < p_cantidad THEN
+        SET p_estado = -1; -- Stock insuficiente
+    ELSE
+        INSERT INTO detalle_venta (id_venta, id_producto, cantidad, precio_unitario)
+        VALUES (p_idVenta, p_idProducto, p_cantidad, p_precioUnitario);
+        
+        SET p_estado = 1; -- Éxito
+    END IF;
+END //
+DELIMITER ;
+

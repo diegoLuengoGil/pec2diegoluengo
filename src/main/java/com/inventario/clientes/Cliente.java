@@ -8,28 +8,33 @@ public class Cliente {
     private String nombre;
     private String email;
     private String telefono;
+    private double dinero;
 
     // --- Constructor con ID (usado al obtener de la base de datos) ---
-    public Cliente(int id, String nombre, String email, String telefono) throws DatoInvalidoException {
+    public Cliente(int id, String nombre, String email, String telefono, double dinero) throws DatoInvalidoException {
         validarNombre(nombre);
         validarEmail(email);
         validarTelefono(telefono);
+        validarDinero(dinero);
 
         this.id = id;
         this.nombre = nombre;
         this.email = email;
         this.telefono = telefono;
+        this.dinero = dinero;
     }
 
     // --- Constructor sin ID (usado al insertar) ---
-    public Cliente(String nombre, String email, String telefono) throws DatoInvalidoException {
+    public Cliente(String nombre, String email, String telefono, double dinero) throws DatoInvalidoException {
         validarNombre(nombre);
         validarEmail(email);
         validarTelefono(telefono);
+        validarDinero(dinero);
 
         this.nombre = nombre;
         this.email = email;
         this.telefono = telefono;
+        this.dinero = dinero;
     }
 
     /**
@@ -55,6 +60,12 @@ public class Cliente {
     private void validarTelefono(String telefono) throws DatoInvalidoException {
         if (telefono == null || telefono.trim().isEmpty()) {
             throw new DatoInvalidoException("El teléfono no puede estar vacío.");
+        }
+    }
+
+    private void validarDinero(double dinero) throws DatoInvalidoException {
+        if (dinero < 0.01) {
+            throw new DatoInvalidoException("El dinero no puede ser negativo.");
         }
     }
 
@@ -93,4 +104,14 @@ public class Cliente {
         validarTelefono(telefono);
         this.telefono = telefono;
     }
+
+    public double getDinero() {
+        return dinero;
+    }
+
+    public void setDinero(double dinero) {
+        this.dinero = dinero;
+    }
+
+    
 }

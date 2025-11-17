@@ -13,8 +13,73 @@ import com.inventario.excepciones.DatoInvalidoException;
 
 public class ClientesBBDD {
 
+    // ... (Métodos como contarClientes, obtenerClientes, insertarCliente, etc.)
+
+    /**
+     * Agrega la cantidad especificada al saldo del cliente.
+     * * @param idCliente ID del cliente.
+     * 
+     * @param cantidad Cantidad a sumar.
+     * @return true si la operación fue exitosa (se actualizó 1 fila), false si no
+     *         se encontró el cliente.
+     * @throws SQLException Si ocurre un error al interactuar con la base de datos.
+     */
+    public static boolean agregarDinero(int idCliente, double cantidad) throws SQLException {
+        String sql = "UPDATE cliente SET dinero = dinero + ? WHERE id_cliente = ?";
+
+        try (Connection con = ConexionBBDD.obtenerConexion();
+                PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setDouble(1, cantidad);
+            ps.setInt(2, idCliente);
+
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    /**
+     * Resta la cantidad especificada al saldo del cliente, asegurando que el saldo
+     * no quede negativo.
+     * * @param idCliente ID del cliente.
+     * 
+     * @param cantidad Cantidad a restar.
+     * @return true si la operación fue exitosa, false si el cliente no fue
+     *         encontrado o el saldo es insuficiente.
+     * @throws SQLException Si ocurre un error al interactuar con la base de datos.
+     */
+    public static boolean restarDinero(int idCliente, double cantidad) throws SQLException {
+        String sql = "UPDATE cliente SET dinero = dinero - ? WHERE id_cliente = ?";
+
+        try (Connection con = ConexionBBDD.obtenerConexion();
+                PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setDouble(1, cantidad);
+            ps.setInt(2, idCliente);
+            ps.setDouble(3, cantidad);
+
+            // Devuelve true si se actualizó exactamente 1 fila
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    public static int contarClientes() throws SQLException {
+        String sql = "SELECT COUNT(*) FROM Cliente";
+        int count = 0;
+
+        // Asumiendo que ConexionBBDD.obtenerConexion() funciona
+        try (Connection con = ConexionBBDD.obtenerConexion();
+                Statement st = con.createStatement();
+                ResultSet rs = st.executeQuery(sql)) {
+
+            if (rs.next()) {
+                count = rs.getInt(1); // El COUNT(*) es la primera columna
+            }
+        }
+        return count;
+    }
+
     public static List<Cliente> buscarPorCampo(String campo, Object valor) throws SQLException, DatoInvalidoException {
-        String sql = "SELECT id_cliente, nombre, email, telefono FROM cliente WHERE " + campo + " = ?";
+        String sql = "SELECT id_cliente, nombre, email, telefono, dinero FROM cliente WHERE " + campo + " = ?";
 
         List<Cliente> clientes = new ArrayList<>();
 
@@ -29,7 +94,8 @@ public class ClientesBBDD {
                             rs.getInt("id_cliente"),
                             rs.getString("nombre"),
                             rs.getString("email"),
-                            rs.getString("telefono"));
+                            rs.getString("telefono"),
+                            rs.getDouble("dinero"));
                     clientes.add(c);
                 }
             }
@@ -72,22 +138,29 @@ public class ClientesBBDD {
         }
     }
 
-    public static List<Cliente> obtenerClientes() throws SQLException, DatoInvalidoException {
+    public static List<Cliente> obtenerClientes() throws SQLException {
         List<Cliente> clientes = new ArrayList<>();
 
-        String sql = "SELECT id_cliente, nombre, email, telefono FROM cliente";
+        String sql = "SELECT id_cliente, nombre, email, telefono, dinero FROM cliente";
 
         try (Connection con = ConexionBBDD.obtenerConexion();
                 Statement st = con.createStatement();
                 ResultSet rs = st.executeQuery(sql)) {
 
             while (rs.next()) {
-                Cliente c = new Cliente(
-                        rs.getInt("id_cliente"),
-                        rs.getString("nombre"),
-                        rs.getString("email"),
-                        rs.getString("telefono"));
-                clientes.add(c);
+                try {
+                    Cliente c = new Cliente(
+                            rs.getInt("id_cliente"),
+                            rs.getString("nombre"),
+                            rs.getString("email"),
+                            rs.getString("telefono"),
+                            rs.getDouble("dinero"));
+                    clientes.add(c);
+                } catch (DatoInvalidoException e) {
+                    int idInvalido = rs.getInt("id_producto");
+                    System.err.println("ERROR de datos en el Cliente ID " + idInvalido + ": " + e.getMessage()
+                            + ". Este id ha sido OMITIDO de la lista.");
+                }
             }
         }
 
@@ -96,7 +169,7 @@ public class ClientesBBDD {
 
     public static boolean insertarCliente(Cliente cliente) throws SQLException {
         boolean exito = false;
-        String sql = "INSERT INTO cliente (nombre, email, telefono) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO cliente (nombre, email, telefono, dinero) VALUES (?, ?, ?, ?)";
 
         try (Connection con = ConexionBBDD.obtenerConexion();
                 PreparedStatement ps = con.prepareStatement(sql)) {
@@ -104,6 +177,7 @@ public class ClientesBBDD {
             ps.setString(1, cliente.getNombre());
             ps.setString(2, cliente.getEmail());
             ps.setString(3, cliente.getTelefono());
+            ps.setDouble(4, cliente.getDinero());
 
             exito = ps.executeUpdate() > 0;
         }

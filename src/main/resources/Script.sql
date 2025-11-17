@@ -74,11 +74,30 @@ BEGIN
     ELSEIF stock_actual < p_cantidad THEN
         SET p_estado = -1; -- Stock insuficiente
     ELSE
-        INSERT INTO detalle_venta (id_venta, id_producto, cantidad, precio_unitario)
+        INSERT INTO DetalleVenta (id_venta, id_producto, cantidad, precio_unitario)
         VALUES (p_idVenta, p_idProducto, p_cantidad, p_precioUnitario);
         
         SET p_estado = 1; -- Éxito
     END IF;
 END //
+DELIMITER ;
+
+Delimiter //
+
+CREATE FUNCTION CalcularTotalVenta(p_id_venta INT)
+RETURNS DECIMAL(10,2)
+DETERMINISTIC
+BEGIN
+    DECLARE total DECIMAL(10,2);
+    
+    -- Suma (cantidad * precio_unitario) para la venta dada
+    SELECT SUM(cantidad * precio_unitario) INTO total 
+    FROM detalleVenta
+    WHERE id_venta = p_id_venta;
+    
+    -- Devuelve 0.0 si no hay detalles (IFNULL)
+    RETURN IFNULL(total, 0.0);
+END //
+
 DELIMITER ;
 

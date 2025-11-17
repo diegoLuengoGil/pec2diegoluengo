@@ -3,14 +3,11 @@ package com.inventario;
 import java.util.Scanner;
 
 import com.inventario.clientes.GestionDeClientes;
+import com.inventario.conexion.ConexionBBDD;
 import com.inventario.productos.GestionDeProductos;
 import com.inventario.util.Util;
 
 public class Main {
-
-    private static void menuClientes() {
-        System.out.println("\n[Menú de Clientes]");
-    }
 
     private static void menuVentas() {
         System.out.println("\n[Registrar Venta]");
@@ -25,6 +22,7 @@ public class Main {
     }
 
     public static void menuPrincipal() {
+        ConexionBBDD.iniciarConexion();
         Scanner scanner = new Scanner(System.in);
         int opcion;
 

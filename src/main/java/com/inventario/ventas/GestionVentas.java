@@ -162,7 +162,7 @@ public class GestionVentas {
             // 3. Finalización: Commit Total
             if (!con.getAutoCommit() && finalizado) { // Si seguimos en transacción
                 con.commit();
-                System.out.println("\n=== SESIÓN FINALIZADA CON ÉXITO (COMMIT) ===");
+                System.out.println("\n=== SESIÓN FINALIZADA ===");
             }
 
             con.setAutoCommit(true);

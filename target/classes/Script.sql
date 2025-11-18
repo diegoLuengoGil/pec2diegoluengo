@@ -55,8 +55,8 @@ CREATE TABLE IF NOT EXISTS DetalleVenta (
 
 
 DELIMITER //
-CREATE PROCEDURE RegistrarDetalleVenta(
-    IN p_idVenta INT,         
+CREATE PROCEDURE RegistrarDetalleVenta( -- Se usa OR REPLACE por si ya existe
+    IN p_idVenta INT,       
     IN p_idProducto INT,      
     IN p_cantidad INT,        
     IN p_precioUnitario DECIMAL(10, 2), 
@@ -65,6 +65,7 @@ CREATE PROCEDURE RegistrarDetalleVenta(
 BEGIN
     DECLARE stock_actual INT;
     
+    -- 1. Verificar stock actual (y existencia del producto)
     SELECT stock INTO stock_actual 
     FROM producto 
     WHERE id_producto = p_idProducto;
@@ -74,8 +75,14 @@ BEGIN
     ELSEIF stock_actual < p_cantidad THEN
         SET p_estado = -1; -- Stock insuficiente
     ELSE
+        -- 2. Insertar el detalle de la venta
         INSERT INTO DetalleVenta (id_venta, id_producto, cantidad, precio_unitario)
         VALUES (p_idVenta, p_idProducto, p_cantidad, p_precioUnitario);
+        
+        -- 3. Actualizar el stock del producto (¡NUEVO!)
+        UPDATE producto 
+        SET stock = stock - p_cantidad 
+        WHERE id_producto = p_idProducto;
         
         SET p_estado = 1; -- Éxito
     END IF;

@@ -24,7 +24,7 @@ public class Main {
             System.out.println("\n========== MENÚ PRINCIPAL ==========");
             System.out.println("1. Gestión de productos");
             System.out.println("2. Gestión de clientes");
-            System.out.println("3. Registrar venta (transacción + savepoint)");
+            System.out.println("3. Registrar venta");
             System.out.println("4. Consultar ventas");
             System.out.println("5. Informes avanzados");
             System.out.println("0. Salir");

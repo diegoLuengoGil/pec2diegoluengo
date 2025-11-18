@@ -1,6 +1,8 @@
 package com.inventario.ventas;
 
+import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Savepoint;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -8,6 +10,7 @@ import java.util.Scanner;
 import com.inventario.clientes.Cliente;
 import com.inventario.clientes.ClientesBBDD;
 import com.inventario.clientes.GestionDeClientes;
+import com.inventario.conexion.ConexionBBDD;
 import com.inventario.excepciones.DatoInvalidoException;
 import com.inventario.productos.GestionDeProductos;
 import com.inventario.productos.Producto;
@@ -31,87 +34,194 @@ public class GestionVentas {
     }
 
     /**
-     * Lógica principal para registrar la venta:
-     * 1. Selecciona Cliente.
-     * 2. Crea la lista de Detalles (List<DetalleVenta>).
-     * 3. Llama a VentasBBDD para la transacción.
+     * Orquesta la consulta de detalles y el cálculo del total (usando la Función).
      */
-    private static void guardarVenta(Scanner scanner) {
-        System.out.println("\n--- REGISTRANDO VENTA ---");
+    private static void consultarDetallesConTotal(Scanner scanner) throws SQLException {
+        System.out.println("\n--- DETALLES DE VENTA ---");
+        int idVenta = Util.pedirNumeroMinimo(scanner, "Introduce el ID de la venta:", 1);
 
-        // Aquí es donde "nace" la lista de detalles
-        List<DetalleVenta> detalles = new ArrayList<>();
-        int idCliente = -1;
+        // 1. Imprime la lista de detalles (sin clase auxiliar)
+        boolean existenDetalles = VentasBBDD.imprimirDetallesVenta(idVenta);
 
-        try {
-            // --- 1. SELECCIONAR CLIENTE ---
-            System.out.println("\n--- Clientes Disponibles ---");
-            // Asumo que tienes un método listarClientes() en ClientesBBDD
-            List<Cliente> clientes = ClientesBBDD.obtenerClientes();
+        // 2. Si se imprimieron detalles, llamamos a la Función para el total
+        if (existenDetalles) {
+            double total = VentasBBDD.calcularTotalVentaConFuncion(idVenta);
+            System.out.println("---------------------------------------------------------------");
+            System.out.printf("TOTAL VENTA: %.2f\n", total);
+        }
+    }
 
-            GestionDeClientes.listarClientes();
+    public static void menuConsultasVentas(Scanner scanner) {
+        int opcion;
 
-            boolean clienteValido = false;
-            do {
-                idCliente = Util.pedirNumeroMinimo(scanner, "Introduce el ID del cliente:", 1);
-                // Validar que el cliente existe
-                clienteValido = clientes.get(idCliente - 1).getId() == idCliente;
-                if (!clienteValido) {
-                    System.err.println("ID de cliente no válido. Inténtalo de nuevo.");
+        do {
+            System.out.println("\n====== CONSULTAS DE VENTAS ======");
+            System.out.println("1. Listar todas las ventas (Resumen)");
+            System.out.println("2. Consultar detalles de una venta por ID");
+            System.out.println("0. Volver al menú principal");
+            System.out.println("=================================");
+            System.out.print("Selecciona una opción: ");
+
+            opcion = Util.pedirNumeroConRango(scanner, null, 0, 2);
+
+            try {
+                switch (opcion) {
+                    case 1 -> VentasBBDD.imprimirResumenVentas();
+                    case 2 -> consultarDetallesConTotal(scanner);
+                    case 0 -> System.out.println("Volviendo al menú principal...");
+                    default -> System.out.println("Opción no válida.");
                 }
-            } while (!clienteValido);
-
-            System.out.println("Cliente ID " + idCliente + " seleccionado.");
-
-            System.out.println("\n--- Añadir Productos a la Venta ---");
-            int opcion = 1;
-
-            do {
-                GestionDeProductos.listarProductos();
-
-                int idProducto = Util.pedirNumeroMinimo(scanner, "Introduce el ID del producto:", 1);
-
-                Producto p = ProductosBBDD.buscarPorCampo("id_producto", idProducto).get(0);
-
-                if (p == null) {
-                    System.err.println("Producto no encontrado.");
-                } else if (p.getStock() == 0) {
-                    System.err.println("Producto agotado.");
-                } else {
-                    // Pedir cantidad validando stock
-                    int cantidad = Util.pedirNumeroConRango(scanner, "Cantidad (Max: " + p.getStock() + "):", 1,
-                            p.getStock());
-
-                    // Crear el objeto DetalleVenta
-                    // Usamos 0 como idVenta temporal
-                    DetalleVenta detalle = new DetalleVenta(0, p.getId(), cantidad, p.getPrecio());
-                    detalles.add(detalle);
-                    System.out.println("Producto añadido: " + p.getNombre() + " (x" + cantidad + ")");
-                }
-
-                opcion = Util.pedirSiNO(scanner, "¿Añadir otro producto?");
-            } while (opcion == 1);
-
-            // --- 3. EJECUTAR TRANSACCIÓN ---
-            if (detalles.isEmpty()) {
-                System.out.println("Venta cancelada (no hay productos).");
-            } else {
-                System.out.println("\nProcesando transacción...");
-                boolean exito = VentasBBDD.registrarVentaTransaccional(idCliente, detalles);
-
-                if (exito) {
-                    System.out.println("Venta registrada con éxito.");
-                } else {
-                    System.err.println("La venta falló y fue revertida (Rollback).");
-                }
+            } catch (SQLException e) {
+                System.err.println("Error de Base de Datos: " + e.getMessage());
+            } catch (Exception e) {
+                System.err.println("Error inesperado: " + e.getMessage());
             }
 
+        } while (opcion != 0);
+    }
+
+    /**
+     * Gestiona el ciclo de ventas completo con transacción manual.
+     */
+    private static void guardarVenta(Scanner scanner) {
+        System.out.println("\n--- INICIANDO SESIÓN DE VENTAS ---");
+        boolean finalizado = false;
+
+        try (Connection con = ConexionBBDD.obtenerConexion()) {
+            // 1. Inicio de la Transacción Global
+            con.setAutoCommit(false);
+
+            boolean continuarVendiendo = true;
+
+            do {
+                System.out.println("\n--- NUEVA VENTA ---");
+
+                // 2. Savepoint al inicio de CADA venta individual
+                Savepoint spInicioVenta = con.setSavepoint("InicioVenta");
+
+                try {
+                    // A. Recolección de datos (Cliente y Productos)
+                    int idCliente = seleccionarCliente(scanner);
+                    List<DetalleVenta> detalles = seleccionarProductos(scanner);
+
+                    if (detalles.isEmpty()) {
+                        System.out.println("Venta vacía. Cancelando esta venta...");
+                        con.rollback(spInicioVenta); // Limpiamos por si acaso
+                    } else {
+                        // B. Registro en BBDD (Cabecera + Detalles)
+                        int idVenta = VentasBBDD.insertarCabeceraVenta(con, idCliente);
+                        double total = VentasBBDD.procesarDetalles(con, idVenta, detalles);
+
+                        // C. Confirmación de precio
+                        System.out.printf("\n>> TOTAL A PAGAR: %.2f €\n", total);
+                        int confirma = Util.pedirSiNO(scanner, "¿El cliente acepta la compra?");
+
+                        if (confirma == 2) {
+                            // NO acepta -> Rollback al Savepoint (Borra esta venta)
+                            con.rollback(spInicioVenta);
+                            System.out.println("Venta rechazada. Deshaciendo cambios de esta venta.");
+                        } else {
+                            // SI acepta -> Cobrar y preguntar cancelación global
+                            VentasBBDD.cobrarCliente(con, idCliente, total);
+                            System.out.println("Venta aceptada y saldo descontado.");
+
+                            // D. Opción de Pánico (Cancelar TODO el lote)
+                            int cancelarTodo = Util.pedirSiNO(scanner,
+                                    "¿Desea CANCELAR TODO el proceso de ventas acumulado hasta ahora?");
+
+                            if (cancelarTodo == 1) {
+                                // ROLLBACK TOTAL (Borra todas las ventas de la sesión)
+                                con.rollback();
+                                System.out.println(
+                                        "!!! PROCESO CANCELADO. Se han deshecho TODAS las ventas de la sesión.");
+                                continuarVendiendo = false;
+                            }
+                        }
+                    }
+
+                    if (continuarVendiendo) {
+                        // E. Continuar con otra venta
+                        int masVentas = Util.pedirSiNO(scanner, "¿Desea registrar otra venta en este lote?");
+                        if (masVentas == 2) {
+                            continuarVendiendo = false;
+                            finalizado = true;
+                        }
+                    }
+
+                } catch (SQLException ex) {
+                    System.err.println("Error en la venta actual: " + ex.getMessage());
+                    System.err.println("Revertiendo esta venta...");
+                    con.rollback(spInicioVenta); // Rollback solo de la venta actual fallida
+
+                    int retry = Util.pedirSiNO(scanner, "¿Intentar otra venta?");
+                    if (retry == 2)
+                        continuarVendiendo = false;
+                }
+            } while (continuarVendiendo);
+
+            // 3. Finalización: Commit Total
+            if (!con.getAutoCommit() && finalizado) { // Si seguimos en transacción
+                con.commit();
+                System.out.println("\n=== SESIÓN FINALIZADA CON ÉXITO (COMMIT) ===");
+            }
+
+            con.setAutoCommit(true);
+
         } catch (SQLException e) {
-            System.err.println("Error de Base de Datos: " + e.getMessage());
-            System.err.println("La transacción ha sido revertida.");
-        } catch (DatoInvalidoException e) {
-            System.err.println("Error de datos: " + e.getMessage());
+            System.err.println("Error CRÍTICO de conexión: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Error inesperado: " + e.getMessage());
         }
+    }
+
+    // --- Métodos auxiliares para limpiar el código principal ---
+
+    private static int seleccionarCliente(Scanner scanner) throws SQLException {
+        int idCliente;
+        boolean valido = false;
+
+        do {
+            GestionDeClientes.listarClientes();
+            idCliente = Util.pedirNumeroMinimo(scanner, "ID Cliente:", 1);
+
+            if (ClientesBBDD.existeCliente(idCliente)) {
+                valido = true;
+            } else {
+                System.out.println("El cliente no existe. Inténtalo de nuevo.");
+            }
+        } while (!valido);
+
+        return idCliente;
+    }
+
+    private static List<DetalleVenta> seleccionarProductos(Scanner scanner) throws SQLException, DatoInvalidoException {
+        List<DetalleVenta> detalles = new ArrayList<>();
+        int opcion = 1;
+        do {
+            GestionDeProductos.listarProductos();
+            int idProd = Util.pedirNumeroMinimo(scanner, "ID Producto:", 1);
+
+            // Nota: Aquí usamos ProductosBBDD.buscarPorCampo que abre su propia conexión
+            // (lectura).
+            // Esto está bien, no interfiere con la transacción de escritura principal.
+            List<Producto> prods = ProductosBBDD.buscarPorCampo("id_producto", idProd);
+
+            if (!prods.isEmpty()) {
+                Producto p = prods.get(0);
+                if (p.getStock() > 0) {
+                    int cant = Util.pedirNumeroConRango(scanner, "Cantidad (Max " + p.getStock() + "):", 1,
+                            p.getStock());
+                    detalles.add(new DetalleVenta(0, p.getId(), cant, p.getPrecio()));
+                    System.out.println("Añadido: " + p.getNombre());
+                } else {
+                    System.out.println("Stock agotado.");
+                }
+            } else {
+                System.out.println("Producto no encontrado.");
+            }
+            opcion = Util.pedirSiNO(scanner, "¿Añadir otro producto?");
+        } while (opcion == 1);
+        return detalles;
     }
 
     public static void crearVenta(Scanner scanner) {
@@ -160,53 +270,6 @@ public class GestionVentas {
         if (preparado) {
             guardarVenta(scanner);
         }
-    }
-
-    /**
-     * Orquesta la consulta de detalles y el cálculo del total (usando la Función).
-     */
-    private static void consultarDetallesConTotal(Scanner scanner) throws SQLException {
-        System.out.println("\n--- DETALLES DE VENTA ---");
-        int idVenta = Util.pedirNumeroMinimo(scanner, "Introduce el ID de la venta:", 1);
-
-        // 1. Imprime la lista de detalles (sin clase auxiliar)
-        boolean existenDetalles = VentasBBDD.imprimirDetallesVenta(idVenta);
-
-        // 2. Si se imprimieron detalles, llamamos a la Función para el total
-        if (existenDetalles) {
-            double total = VentasBBDD.calcularTotalVentaConFuncion(idVenta);
-            System.out.println("---------------------------------------------------------------");
-            System.out.printf("TOTAL VENTA: %.2f\n", total);
-        }
-    }
-
-    public static void menuConsultasVentas(Scanner scanner) {
-        int opcion;
-
-        do {
-            System.out.println("\n====== CONSULTAS DE VENTAS ======");
-            System.out.println("1. Listar todas las ventas (Resumen)");
-            System.out.println("2. Consultar detalles de una venta por ID");
-            System.out.println("0. Volver al menú principal");
-            System.out.println("=================================");
-            System.out.print("Selecciona una opción: ");
-
-            opcion = Util.pedirNumeroConRango(scanner, null, 0, 2);
-
-            try {
-                switch (opcion) {
-                    case 1 -> VentasBBDD.imprimirResumenVentas();
-                    case 2 -> consultarDetallesConTotal(scanner);
-                    case 0 -> System.out.println("Volviendo al menú principal...");
-                    default -> System.out.println("Opción no válida.");
-                }
-            } catch (SQLException e) {
-                System.err.println("Error de Base de Datos: " + e.getMessage());
-            } catch (Exception e) {
-                System.err.println("Error inesperado: " + e.getMessage());
-            }
-
-        } while (opcion != 0);
     }
 
 }

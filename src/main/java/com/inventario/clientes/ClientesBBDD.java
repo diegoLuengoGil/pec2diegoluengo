@@ -13,6 +13,18 @@ import com.inventario.excepciones.DatoInvalidoException;
 
 public class ClientesBBDD {
 
+    public static boolean existeCliente(int id) throws SQLException {
+        String sql = "SELECT 1 FROM cliente WHERE id_cliente = ?";
+        try (Connection con = ConexionBBDD.obtenerConexion();
+                PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
     // ... (Métodos como contarClientes, obtenerClientes, insertarCliente, etc.)
 
     /**

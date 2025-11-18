@@ -146,7 +146,7 @@ public class GestionDeProductos {
 
         String descripcion = Util.pedirTexto(scanner, "Introduce la descripción del producto:");
 
-        double precio = Util.pedirDecimalMinimo(scanner, "Introduce el precio del producto:", 0);
+        double precio = Util.pedirDecimalMinimo(scanner, "Introduce el precio del producto:", 0.00);
 
         int stock = Util.pedirNumeroMinimo(scanner, "Introduce el stock inicial del producto:", 0);
 

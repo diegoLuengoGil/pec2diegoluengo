@@ -5,7 +5,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Savepoint;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.List;
@@ -121,14 +120,13 @@ public class VentasBBDD {
 
     /**
      * Inserta la cabecera de la venta y devuelve el ID generado.
+     * Nota: Recibe la conexión, no la crea.
      */
-    private static int insertarCabeceraVenta(Connection con, int idCliente) throws SQLException {
+    public static int insertarCabeceraVenta(Connection con, int idCliente) throws SQLException {
         int idVenta = -1;
         String sql = "INSERT INTO venta (id_cliente) VALUES (?)";
 
-        try (PreparedStatement ps = con.prepareStatement(sql,
-                PreparedStatement.RETURN_GENERATED_KEYS)) {
-
+        try (PreparedStatement ps = con.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, idCliente);
             if (ps.executeUpdate() > 0) {
                 try (ResultSet rs = ps.getGeneratedKeys()) {
@@ -142,64 +140,39 @@ public class VentasBBDD {
         if (idVenta == -1) {
             throw new SQLException("Error al obtener el ID de la venta generada.");
         }
-        System.out.println("Venta ID " + idVenta + " registrada.");
         return idVenta;
     }
 
     /**
-     * Actualiza el stock de un producto específico en la BBDD.
+     * Procesa la lista de detalles llamando al SP y ahora solo calcula el total (el
+     * SP actualiza stock).
+     * Retorna el total acumulado de la venta.
      */
-    private static void actualizarStockProducto(Connection con, DetalleVenta detalle) throws SQLException {
-        String sql = "UPDATE producto SET stock = stock - ? WHERE id_producto = ?";
-
-        try (PreparedStatement psStock = con.prepareStatement(sql)) {
-            psStock.setInt(1, detalle.getCantidad());
-            psStock.setInt(2, detalle.getIdProducto());
-            psStock.executeUpdate();
-            System.out.println("   [Stock OK] Stock de Producto ID " + detalle.getIdProducto() + " actualizado.");
-        }
-    }
-
-    /**
-     * Procesa la lista de detalles, llama al SP y actualiza el stock.
-     */
-    private static double procesarDetalles(Connection con, int idVenta, List<DetalleVenta> detalles)
+    public static double procesarDetalles(Connection con, int idVenta, List<DetalleVenta> detalles)
             throws SQLException {
-
         double totalVenta = 0.0;
+        // El SP ahora se encarga de: insertar DetalleVenta + actualizar Stock
         String sqlSP = "{CALL RegistrarDetalleVenta(?, ?, ?, ?, ?)}";
 
-        try (CallableStatement csDetalle = con.prepareCall(sqlSP)) {
-
+        try (CallableStatement cs = con.prepareCall(sqlSP)) {
             for (DetalleVenta detalle : detalles) {
-                double subtotalDetalle = detalle.getCantidad() * detalle.getPrecioUnitario();
+                double subtotal = detalle.getCantidad() * detalle.getPrecioUnitario();
 
-                // 1. Llamar al SP (valida stock e inserta detalle)
-                csDetalle.setInt(1, idVenta);
-                csDetalle.setInt(2, detalle.getIdProducto());
-                csDetalle.setInt(3, detalle.getCantidad());
-                csDetalle.setDouble(4, detalle.getPrecioUnitario());
-                csDetalle.registerOutParameter(5, Types.INTEGER);
-                csDetalle.execute();
-                int estadoSP = csDetalle.getInt(5);
+                cs.setInt(1, idVenta);
+                cs.setInt(2, detalle.getIdProducto());
+                cs.setInt(3, detalle.getCantidad());
+                cs.setDouble(4, detalle.getPrecioUnitario());
+                cs.registerOutParameter(5, Types.INTEGER);
+                cs.execute();
 
-                if (estadoSP == 1) {
-                    // 2. Actualizar Stock (en Java)
-                    actualizarStockProducto(con, detalle);
-                    totalVenta += subtotalDetalle;
-                    System.out.println("[Detalle OK] Producto ID " + detalle.getIdProducto() + " insertado.");
+                int estado = cs.getInt(5);
+
+                if (estado == 1) {
+                    // ¡ELIMINADA LA LLAMADA A actualizarStockProducto!
+                    totalVenta += subtotal;
                 } else {
-                    String mensajeError = switch (estadoSP) {
-                        case -1 -> "Stock insuficiente";
-                        case -2 -> "Producto no encontrado";
-                        default -> "Error desconocido (Código: " + estadoSP + ")";
-                    };
-
-                    System.err.printf("[Detalle FALLO] Producto ID %d: %s.\n", detalle.getIdProducto(),
-                            mensajeError);
-
-                    // Lanzar la excepción para forzar el Rollback (parcial o total)
-                    throw new SQLException("Error en la línea de venta: " + mensajeError);
+                    String error = (estado == -1) ? "Stock insuficiente" : "Producto no encontrado";
+                    throw new SQLException("Error en producto ID " + detalle.getIdProducto() + ": " + error);
                 }
             }
         }
@@ -207,93 +180,18 @@ public class VentasBBDD {
     }
 
     /**
-     * Actualiza el dinero del cliente con el total de la venta.
+     * Cobra al cliente (resta dinero).
      */
-    private static void actualizarDineroCliente(Connection con, int idCliente, double totalVenta)
-            throws SQLException {
-
+    public static void cobrarCliente(Connection con, int idCliente, double monto) throws SQLException {
         String sql = "UPDATE cliente SET dinero = dinero - ? WHERE id_cliente = ?";
-
-        try (PreparedStatement psCliente = con.prepareStatement(sql)) {
-            psCliente.setDouble(1, totalVenta);
-            psCliente.setInt(2, idCliente);
-
-            if (psCliente.executeUpdate() < 1) {
-                // Comprobamos si el fallo es por dinero insuficiente
-                // (Asumiendo que tienes el CHECK (dinero >= 0) en la BBDD)
-                throw new SQLException("Error al actualizar el dinero del cliente ID " + idCliente
-                        + ". Saldo insuficiente o cliente no encontrado.");
-            }
-            System.out.printf("-> Dinero del cliente ID %d actualizado. Total: -%.2f.\n", idCliente, totalVenta);
-        }
-    }
-
-    // ----------------------------------------------------------------------
-    // MÉTODO PRINCIPAL DE LA TRANSACCIÓN (ORQUESTACIÓN)
-    // ----------------------------------------------------------------------
-
-    /**
-     * Registra la venta completa en una transacción.
-     * Esta es la estructura correcta para manejar transacciones manualmente.
-     */
-    public static boolean registrarVentaTransaccional(int idCliente, List<DetalleVenta> detalles) throws SQLException {
-        Connection con = null; // Debe declararse fuera del try para ser accesible en catch/finally
-        Savepoint puntoSeguro = null;
-        boolean exito = false;
-        int idVenta = -1;
-
-        try {
-            con = ConexionBBDD.obtenerConexion();
-            con.setAutoCommit(false); // 1. Iniciar la transacción
-
-            // 2. Insertar Cabecera (puede fallar)
-            idVenta = insertarCabeceraVenta(con, idCliente);
-
-            // 3. Establecer Savepoint
-            puntoSeguro = con.setSavepoint("AntesDeActualizaciones");
-            System.out.println("Savepoint 'AntesDeActualizaciones' establecido.");
-
-            // 4. Procesar Detalles y Stock (puede fallar)
-            double totalVenta = procesarDetalles(con, idVenta, detalles);
-
-            // 5. Actualizar Dinero Cliente (puede fallar)
-            actualizarDineroCliente(con, idCliente, totalVenta);
-
-            // 6. Commit Final
-            con.commit();
-            exito = true;
-            System.out.println("\nVenta registrada con éxito. COMMIT realizado.");
-
-        } catch (SQLException e) {
-
-            // 7. Gestión del Rollback
-            if (con != null) {
-                if (puntoSeguro != null) {
-                    // Fallo después de la Cabecera -> Rollback Parcial
-                    con.rollback(puntoSeguro);
-                    con.commit(); // Asegurar que la cabecera se mantenga
-                    System.err.println(
-                            "\nFALLO: Transacción revertida al Savepoint. Cabecera Venta ID " + idVenta
-                                    + " mantenida.");
-                    // Devolvemos true porque la demostración del rollback parcial fue exitosa
-                    exito = true;
-                } else {
-                    // Fallo antes del Savepoint (Cabecera o Conexión) -> Rollback Total
-                    con.rollback();
-                    System.err.println("\nFALLO: Transacción revertida completamente.");
-                    exito = false;
-                }
-            }
-            // Propagar la excepción para que sea manejada por la capa de gestión
-            throw e;
-
-        } finally {
-            if (con != null) {
-                // Restaurar el autoCommit y cerrar la conexión
-                con.setAutoCommit(true);
-                con.close();
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setDouble(1, monto);
+            ps.setInt(2, idCliente);
+            if (ps.executeUpdate() == 0) {
+                // Esto saltará si el cliente no existe, pero la restricción de saldo negativo
+                // saltará como excepción SQL directa desde la BBDD.
+                throw new SQLException("Error al actualizar saldo. Verifique cliente o fondos.");
             }
         }
-        return exito;
     }
 }

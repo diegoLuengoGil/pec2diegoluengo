@@ -199,7 +199,8 @@ public class GestionDeClientes {
         }
 
         System.out.printf("%-5s %-20s %-30s %-15s %10s%n", "ID", "Nombre", "Email", "Teléfono", "Dinero");
-        System.out.println("----------------------------------------------------------------------------------------------");
+        System.out.println(
+                "----------------------------------------------------------------------------------------------");
 
         for (Cliente cliente : clientes) {
             System.out.printf("%-5d %-20s %-30s %-15s %10.2f%n",
@@ -254,12 +255,12 @@ public class GestionDeClientes {
             System.out.println("4. Listar clientes");
             System.out.println("5. Buscar cliente por ID");
             System.out.println("6. Agregar dinero a cliente");
-            System.out.println("7. Restar dinero a cliente"); 
+            System.out.println("7. Restar dinero a cliente");
             System.out.println("0. Volver al menú principal");
             System.out.println("=================================");
             System.out.print("Selecciona una opción: ");
 
-            opcion = Util.pedirNumeroConRango(scanner, null, 0, 7);
+            opcion = Util.pedirNumeroConRango(scanner, "", 0, 7);
 
             switch (opcion) {
                 case 1 -> insertarCliente(scanner);

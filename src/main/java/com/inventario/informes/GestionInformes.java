@@ -3,6 +3,9 @@ package com.inventario.informes;
 import com.inventario.util.Util;
 import java.util.Scanner;
 
+/**
+ * Clase que gestiona los informes.
+ */
 public class GestionInformes {
 
     /**
@@ -23,7 +26,6 @@ public class GestionInformes {
             System.out.println("======================================================");
             System.out.print("Selecciona una opción: ");
 
-            // Asume que Util.pedirNumeroConRango existe y funciona
             opcion = Util.pedirNumeroConRango(scanner, null, 0, 4);
 
             switch (opcion) {

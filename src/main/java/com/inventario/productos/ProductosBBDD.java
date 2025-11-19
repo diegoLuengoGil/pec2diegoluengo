@@ -11,24 +11,43 @@ import java.util.List;
 import com.inventario.conexion.ConexionBBDD;
 import com.inventario.excepciones.DatoInvalidoException;
 
+/**
+ * Clase que gestiona las operaciones de la base de datos relacionadas con los
+ * productos.
+ */
 public class ProductosBBDD {
 
-        public static int contarProductos() throws SQLException {
+    /**
+     * Cuenta el número total de productos en la base de datos.
+     *
+     * @return El número total de productos.
+     * @throws SQLException Si ocurre un error al interactuar con la base de datos.
+     */
+    public static int contarProductos() throws SQLException {
         String sql = "SELECT COUNT(*) FROM producto";
         int count = 0;
 
-        // Asumiendo que ConexionBBDD.obtenerConexion() funciona
         try (Connection con = ConexionBBDD.obtenerConexion();
                 Statement st = con.createStatement();
                 ResultSet rs = st.executeQuery(sql)) {
 
             if (rs.next()) {
-                count = rs.getInt(1); // El COUNT(*) es la primera columna
+                count = rs.getInt(1);
             }
         }
         return count;
     }
 
+    /**
+     * Busca productos en la base de datos por un campo específico.
+     *
+     * @param campo El nombre del campo por el que se buscará.
+     * @param valor El valor del campo para la búsqueda.
+     * @return Una lista de productos que coinciden con la búsqueda.
+     * @throws SQLException          Si ocurre un error al interactuar con la base
+     *                               de datos.
+     * @throws DatoInvalidoException Si el valor del campo es inválido.
+     */
     public static List<Producto> buscarPorCampo(String campo, Object valor) throws SQLException, DatoInvalidoException {
         String sql = "SELECT id_producto, nombre, descripcion, precio, stock "
                 + "FROM producto WHERE " + campo + " = ?";
@@ -56,6 +75,15 @@ public class ProductosBBDD {
         return productos;
     }
 
+    /**
+     * Actualiza un campo específico de un producto en la base de datos.
+     *
+     * @param idProducto El ID del producto a actualizar.
+     * @param campo      El nombre del campo a actualizar.
+     * @param valor      El nuevo valor para el campo.
+     * @return true si la actualización fue exitosa, false en caso contrario.
+     * @throws SQLException Si ocurre un error al interactuar con la base de datos.
+     */
     public static boolean actualizarProductoCampo(int idProducto, String campo, Object valor) throws SQLException {
         String sql = "UPDATE producto SET " + campo + " = ? WHERE id_producto = ?";
 
@@ -75,6 +103,14 @@ public class ProductosBBDD {
         }
     }
 
+    /**
+     * Elimina un producto de la base de datos por su ID.
+     *
+     * @param idProducto El ID del producto a eliminar.
+     * @return true si el producto fue eliminado exitosamente, false en caso
+     *         contrario.
+     * @throws SQLException Si ocurre un error al interactuar con la base de datos.
+     */
     public static boolean eliminarProducto(int idProducto) throws SQLException {
         String sql = "DELETE FROM producto WHERE id_producto = ?";
 
@@ -86,10 +122,16 @@ public class ProductosBBDD {
 
             System.out.println("Filas afectadas: " + filasAfectadas);
 
-            return filasAfectadas > 0; // true si se eliminó algún producto
+            return filasAfectadas > 0;
         }
     }
 
+    /**
+     * Obtiene todos los productos de la base de datos.
+     *
+     * @return Una lista de todos los productos.
+     * @throws SQLException Si ocurre un error al interactuar con la base de datos.
+     */
     public static List<Producto> obtenerProductos() throws SQLException {
         List<Producto> productos = new ArrayList<>();
         String sql = "SELECT id_producto, nombre, descripcion, precio, stock FROM producto";
@@ -110,11 +152,9 @@ public class ProductosBBDD {
                     productos.add(p);
 
                 } catch (DatoInvalidoException e) {
-                    // ¡Añadir gestión de errores aquí!
                     int idInvalido = rs.getInt("id_producto");
                     System.err.println("ERROR de datos en el Producto ID " + idInvalido + ": " + e.getMessage()
                             + ". Este producto ha sido OMITIDO de la lista.");
-                    // continue es implícito aquí, el bucle pasa al siguiente rs.next()
                 }
             }
         }
@@ -124,11 +164,13 @@ public class ProductosBBDD {
 
     /**
      * Inserta un nuevo producto en la base de datos.
-     * 
-     * @param producto El producto a insertar.
-     * @return true si la inserción fue exitosa, false en caso contrario.
+     *
+     * @param producto El objeto Producto a insertar.
+     * @return {@code true} si el producto fue insertado exitosamente, {@code false}
+     *         en caso contrario.
      * @throws SQLException Si ocurre un error al interactuar con la base de datos.
      */
+
     public static boolean insertarProducto(Producto producto) throws SQLException {
 
         String sql = "INSERT INTO producto (nombre, descripcion, precio, stock) VALUES (?, ?, ?, ?)";
@@ -147,6 +189,6 @@ public class ProductosBBDD {
                 exito = true;
             }
         }
-        return exito; // Retorna true si la inserción fue exitosa
+        return exito;
     }
 }

@@ -178,6 +178,13 @@ public class GestionVentas {
         }
     }
 
+    /**
+     * Selecciona un cliente existente.
+     * 
+     * @param scanner Scanner para la entrada del usuario.
+     * @return ID del cliente seleccionado.
+     * @throws SQLException Si ocurre un error de base de datos.
+     */
     private static int seleccionarCliente(Scanner scanner) throws SQLException {
         int idCliente;
         boolean valido = false;
@@ -196,6 +203,14 @@ public class GestionVentas {
         return idCliente;
     }
 
+    /**
+     * Selecciona productos existentes para la venta.
+     * 
+     * @param scanner Scanner para la entrada del usuario.
+     * @return Lista de detalles de venta seleccionados.
+     * @throws SQLException          Si ocurre un error de base de datos.
+     * @throws DatoInvalidoException Si se introduce un dato inválido.
+     */
     private static List<DetalleVenta> seleccionarProductos(Scanner scanner) throws SQLException, DatoInvalidoException {
         List<DetalleVenta> detalles = new ArrayList<>();
         int opcion = 1;
@@ -223,6 +238,11 @@ public class GestionVentas {
         return detalles;
     }
 
+    /**
+     * Crea una nueva venta.
+     * 
+     * @param scanner Scanner para la entrada del usuario.
+     */
     public static void crearVenta(Scanner scanner) {
         System.out.println("\n--- CREAR VENTA ---");
         boolean preparado = false;

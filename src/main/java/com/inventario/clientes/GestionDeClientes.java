@@ -7,8 +7,16 @@ import java.util.Scanner;
 import com.inventario.excepciones.DatoInvalidoException;
 import com.inventario.util.Util;
 
+/**
+ * Clase que gestiona la gestión de clientes.
+ */
 public class GestionDeClientes {
 
+    /**
+     * Resta dinero a un cliente.
+     *
+     * @param scanner El scanner para la entrada del usuario.
+     */
     private static void restarDineroACliente(Scanner scanner) {
         System.out.println("\n--- RESTAR DINERO A CLIENTE ---");
 
@@ -26,8 +34,6 @@ public class GestionDeClientes {
                 if (resultado) {
                     System.out.println("Dinero restado correctamente.");
                 } else {
-                    // El fallo se debe al ID no encontrado O saldo insuficiente (por el WHERE
-                    // dinero >= ?)
                     System.out.println(
                             "No se pudo restar el dinero. Verifique el ID o si el cliente tiene saldo suficiente.");
                 }
@@ -40,6 +46,11 @@ public class GestionDeClientes {
         }
     }
 
+    /**
+     * Agrega dinero a un cliente.
+     *
+     * @param scanner El scanner para la entrada del usuario.
+     */
     private static void agregarDineroACliente(Scanner scanner) {
         System.out.println("\n--- AGREGAR DINERO A CLIENTE ---");
 
@@ -69,6 +80,11 @@ public class GestionDeClientes {
         }
     }
 
+    /**
+     * Busca un cliente por su ID.
+     *
+     * @param scanner El scanner para la entrada del usuario.
+     */
     private static void buscarClientePorId(Scanner scanner) {
         System.out.println("\n--- BUSCAR CLIENTE POR ID ---");
 
@@ -99,6 +115,11 @@ public class GestionDeClientes {
         }
     }
 
+    /**
+     * Elimina un cliente.
+     *
+     * @param scanner El scanner para la entrada del usuario.
+     */
     private static void eliminarCliente(Scanner scanner) {
         System.out.println("\n--- ELIMINAR CLIENTE ---");
 
@@ -136,6 +157,11 @@ public class GestionDeClientes {
         }
     }
 
+    /**
+     * Actualiza un cliente.
+     *
+     * @param scanner El scanner para la entrada del usuario.
+     */
     private static void actualizarCliente(Scanner scanner) {
         System.out.println("\n--- ACTUALIZAR CLIENTE ---");
 
@@ -188,6 +214,11 @@ public class GestionDeClientes {
         }
     }
 
+    /**
+     * Lista todos los clientes.
+     *
+     * @throws SQLException Si hay un error al obtener los clientes.
+     */
     public static void listarClientes() throws SQLException {
         System.out.println("\n--- LISTADO DE CLIENTES ---");
 
@@ -213,6 +244,12 @@ public class GestionDeClientes {
 
     }
 
+    /**
+     * Inserta un nuevo cliente.
+     *
+     * @param scanner El scanner para la entrada del usuario.
+     * @return true si se inserta correctamente, false en caso contrario.
+     */
     public static boolean insertarCliente(Scanner scanner) {
 
         boolean exito = false;
@@ -244,6 +281,11 @@ public class GestionDeClientes {
         return exito;
     }
 
+    /**
+     * Muestra el menú de clientes.
+     *
+     * @param scanner El scanner para la entrada del usuario.
+     */
     public static void menuClientes(Scanner scanner) {
         int opcion;
 

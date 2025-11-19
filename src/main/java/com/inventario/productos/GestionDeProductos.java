@@ -7,7 +7,15 @@ import java.util.Scanner;
 import com.inventario.excepciones.DatoInvalidoException;
 import com.inventario.util.Util;
 
+/**
+ * Clase que gestiona los productos.
+ */
 public class GestionDeProductos {
+    /**
+     * Busca un producto por su ID.
+     *
+     * @param scanner El scanner para leer la entrada del usuario.
+     */
     private static void buscarProductoPorId(Scanner scanner) {
         System.out.println("\n--- BUSCAR PRODUCTO POR ID ---");
 
@@ -38,6 +46,11 @@ public class GestionDeProductos {
         }
     }
 
+    /**
+     * Actualiza un producto.
+     *
+     * @param scanner El scanner para leer la entrada del usuario.
+     */
     private static void actualizarProducto(Scanner scanner) {
         System.out.println("\n--- ACTUALIZAR PRODUCTO ---");
 
@@ -92,6 +105,11 @@ public class GestionDeProductos {
         }
     }
 
+    /**
+     * Elimina un producto.
+     *
+     * @param scanner El scanner para leer la entrada del usuario.
+     */
     private static void eliminarProducto(Scanner scanner) {
         System.out.println("\n--- ELIMINAR PRODUCTO ---");
 
@@ -118,6 +136,11 @@ public class GestionDeProductos {
         }
     }
 
+    /**
+     * Lista todos los productos.
+     *
+     * @throws SQLException Si ocurre un error al obtener los productos.
+     */
     public static void listarProductos() throws SQLException {
         System.out.println("\n--- LISTADO DE PRODUCTOS ---");
 
@@ -139,6 +162,11 @@ public class GestionDeProductos {
 
     }
 
+    /**
+     * Inserta un nuevo producto.
+     *
+     * @param scanner El scanner para leer la entrada del usuario.
+     */
     private static void insertarProducto(Scanner scanner) {
         System.out.println("\n--- Insertar nuevo producto ---");
 
@@ -164,6 +192,11 @@ public class GestionDeProductos {
         }
     }
 
+    /**
+     * Muestra el menú de productos.
+     *
+     * @param scanner El scanner para leer la entrada del usuario.
+     */
     public static void menuProductos(Scanner scanner) {
         int opcion;
 

@@ -2,8 +2,18 @@ package com.inventario.util;
 
 import java.util.Scanner;
 
+/**
+ * Clase que contiene métodos utilitarios para la entrada de datos.
+ */
 public class Util {
 
+    /**
+     * Pide al usuario que ingrese una opción (1: Sí, 2: No).
+     * 
+     * @param scanner Scanner para leer la entrada del usuario.
+     * @param mensaje Mensaje a mostrar al usuario.
+     * @return 1 si el usuario elige Sí, 2 si elige No.
+     */
     public static int pedirSiNO(Scanner scanner, String mensaje) {
         int opcion;
         do {
@@ -16,6 +26,13 @@ public class Util {
         return opcion;
     }
 
+    /**
+     * Pide al usuario que ingrese una opción (1: Sí, 2: No) y devuelve un booleano.
+     * 
+     * @param scanner Scanner para leer la entrada del usuario.
+     * @param mensaje Mensaje a mostrar al usuario.
+     * @return true si el usuario elige Sí, false si elige No.
+     */
     public static boolean pedirSiNOBoolean(Scanner scanner, String mensaje) {
         int opcion;
         boolean esSi = false;
@@ -33,6 +50,13 @@ public class Util {
         return esSi;
     }
 
+    /**
+     * Pide al usuario que ingrese un número entero.
+     * 
+     * @param scanner Scanner para leer la entrada del usuario.
+     * @param mensaje Mensaje a mostrar al usuario.
+     * @return Número entero ingresado por el usuario.
+     */
     public static int pedirNumero(Scanner scanner, String mensaje) {
         System.out.println(mensaje);
         while (!scanner.hasNextInt()) {
@@ -45,6 +69,15 @@ public class Util {
         return numero;
     }
 
+    /**
+     * Pide al usuario que ingrese un número entero dentro de un rango.
+     * 
+     * @param scanner Scanner para leer la entrada del usuario.
+     * @param mensaje Mensaje a mostrar al usuario.
+     * @param min     Valor mínimo del rango.
+     * @param max     Valor máximo del rango.
+     * @return Número entero dentro del rango.
+     */
     public static int pedirNumeroConRango(Scanner scanner, String mensaje, int min, int max) {
         int numero;
         do {
@@ -56,6 +89,14 @@ public class Util {
         return numero;
     }
 
+    /**
+     * Pide al usuario que ingrese un número entero mayor o igual a un valor mínimo.
+     * 
+     * @param scanner Scanner para leer la entrada del usuario.
+     * @param mensaje Mensaje a mostrar al usuario.
+     * @param min     Valor mínimo del rango.
+     * @return Número entero mayor o igual al valor mínimo.
+     */
     public static int pedirNumeroMinimo(Scanner scanner, String mensaje, int min) {
         int numero;
         do {
@@ -67,6 +108,14 @@ public class Util {
         return numero;
     }
 
+    /**
+     * Pide al usuario que ingrese un número entero menor o igual a un valor máximo.
+     * 
+     * @param scanner Scanner para leer la entrada del usuario.
+     * @param mensaje Mensaje a mostrar al usuario.
+     * @param max     Valor máximo del rango.
+     * @return Número entero menor o igual al valor máximo.
+     */
     public static int pedirNumeroMaximo(Scanner scanner, String mensaje, int max) {
         int numero;
         do {
@@ -78,6 +127,13 @@ public class Util {
         return numero;
     }
 
+    /**
+     * Pide al usuario que ingrese un texto.
+     * 
+     * @param scanner Scanner para leer la entrada del usuario.
+     * @param mensaje Mensaje a mostrar al usuario.
+     * @return Texto ingresado por el usuario.
+     */
     public static String pedirTexto(Scanner scanner, String mensaje) {
         System.out.println(mensaje);
         String texto = scanner.nextLine();
@@ -88,6 +144,13 @@ public class Util {
         return texto;
     }
 
+    /**
+     * Pide al usuario que ingrese un número decimal.
+     * 
+     * @param scanner Scanner para leer la entrada del usuario.
+     * @param mensaje Mensaje a mostrar al usuario.
+     * @return Número decimal ingresado por el usuario.
+     */
     public static double pedirDecimal(Scanner scanner, String mensaje) {
         System.out.println(mensaje);
         while (!scanner.hasNextDouble()) {
@@ -100,6 +163,15 @@ public class Util {
         return numero;
     }
 
+    /**
+     * Pide al usuario que ingrese un número decimal mayor o igual a un valor
+     * mínimo.
+     * 
+     * @param scanner Scanner para leer la entrada del usuario.
+     * @param mensaje Mensaje a mostrar al usuario.
+     * @param min     Valor mínimo del rango.
+     * @return Número decimal mayor o igual al valor mínimo.
+     */
     public static double pedirDecimalMinimo(Scanner scanner, String mensaje, double min) {
         double numero;
         do {
@@ -111,6 +183,15 @@ public class Util {
         return numero;
     }
 
+    /**
+     * Pide al usuario que ingrese un número decimal menor o igual a un valor
+     * máximo.
+     * 
+     * @param scanner Scanner para leer la entrada del usuario.
+     * @param mensaje Mensaje a mostrar al usuario.
+     * @param max     Valor máximo del rango.
+     * @return Número decimal menor o igual al valor máximo.
+     */
     public static double pedirDecimalMaximo(Scanner scanner, String mensaje, double max) {
         double numero;
         do {
@@ -122,6 +203,15 @@ public class Util {
         return numero;
     }
 
+    /**
+     * Pide al usuario que ingrese un número decimal dentro de un rango.
+     * 
+     * @param scanner Scanner para leer la entrada del usuario.
+     * @param mensaje Mensaje a mostrar al usuario.
+     * @param min     Valor mínimo del rango.
+     * @param max     Valor máximo del rango.
+     * @return Número decimal dentro del rango.
+     */
     public static double pedirDecimalConRango(Scanner scanner, String mensaje, double min, double max) {
         double numero;
         do {

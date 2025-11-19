@@ -221,27 +221,7 @@ public class GestionDeClientes {
      */
     public static void listarClientes() throws SQLException {
         System.out.println("\n--- LISTADO DE CLIENTES ---");
-
-        List<Cliente> clientes = ClientesBBDD.obtenerClientes();
-
-        if (clientes.isEmpty()) {
-            System.out.println("No hay clientes registrados.");
-            return;
-        }
-
-        System.out.printf("%-5s %-20s %-30s %-15s %10s%n", "ID", "Nombre", "Email", "Teléfono", "Dinero");
-        System.out.println(
-                "----------------------------------------------------------------------------------------------");
-
-        for (Cliente cliente : clientes) {
-            System.out.printf("%-5d %-20s %-30s %-15s %10.2f%n",
-                    cliente.getId(),
-                    cliente.getNombre(),
-                    cliente.getEmail(),
-                    cliente.getTelefono(),
-                    cliente.getDinero());
-        }
-
+        ClientesBBDD.imprimirClientes();
     }
 
     /**

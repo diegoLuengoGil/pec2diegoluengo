@@ -143,23 +143,7 @@ public class GestionDeProductos {
      */
     public static void listarProductos() throws SQLException {
         System.out.println("\n--- LISTADO DE PRODUCTOS ---");
-
-        List<Producto> productos = ProductosBBDD.obtenerProductos();
-
-        if (productos.isEmpty()) {
-            System.out.println("No hay productos en la base de datos.");
-        } else {
-
-            System.out.printf("%-5s %-20s %-30s %-10s %-5s%n", "ID", "Nombre", "Descripción", "Precio", "Stock");
-            System.out.println("---------------------------------------------------------------------");
-
-            for (Producto producto : productos) {
-                System.out.printf("%-5d %-20s %-30s %-10.2f %-5d%n",
-                        producto.getId(), producto.getNombre(), producto.getDescripcion(), producto.getPrecio(),
-                        producto.getStock());
-            }
-        }
-
+        ProductosBBDD.imprimirProductos();
     }
 
     /**

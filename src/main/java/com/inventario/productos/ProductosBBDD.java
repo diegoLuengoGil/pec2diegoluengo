@@ -172,23 +172,26 @@ public class ProductosBBDD {
      */
 
     public static boolean insertarProducto(Producto producto) throws SQLException {
-
-        String sql = "INSERT INTO producto (nombre, descripcion, precio, stock) VALUES (?, ?, ?, ?)";
-
         boolean exito = false;
+        String sql = "INSERT INTO producto (nombre, descripcion, precio, stock) VALUES (?, ?, ?, ?)";
 
         try (Connection con = ConexionBBDD.obtenerConexion();
                 PreparedStatement ps = con.prepareStatement(sql)) {
+
             ps.setString(1, producto.getNombre());
             ps.setString(2, producto.getDescripcion());
             ps.setDouble(3, producto.getPrecio());
             ps.setInt(4, producto.getStock());
-            int filasAfectadas = ps.executeUpdate();
 
-            if (filasAfectadas > 0) {
-                exito = true;
-            }
+            exito = ps.executeUpdate() > 0;
         }
         return exito;
+    }
+
+    /**
+     * Imprime la tabla de productos usando metadatos.
+     */
+    public static void imprimirProductos() {
+        ConexionBBDD.imprimirTabla("SELECT * FROM producto");
     }
 }

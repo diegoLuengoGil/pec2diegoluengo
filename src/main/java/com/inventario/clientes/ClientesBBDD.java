@@ -247,4 +247,11 @@ public class ClientesBBDD {
         }
         return exito;
     }
+
+    /**
+     * Imprime la tabla de clientes usando metadatos.
+     */
+    public static void imprimirClientes() {
+        ConexionBBDD.imprimirTabla("SELECT * FROM cliente");
+    }
 }

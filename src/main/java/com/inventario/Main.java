@@ -9,8 +9,16 @@ import com.inventario.productos.GestionDeProductos;
 import com.inventario.util.Util;
 import com.inventario.ventas.GestionVentas;
 
+/**
+ * Clase principal del programa
+ * 
+ * @author Diego Luengo Gil
+ */
 public class Main {
 
+    /**
+     * Muestra el menú principal del programa
+     */
     public static void menuPrincipal() {
         ConexionBBDD.iniciarConexion();
         Scanner scanner = new Scanner(System.in);

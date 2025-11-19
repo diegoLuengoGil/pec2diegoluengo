@@ -17,8 +17,18 @@ import com.inventario.productos.Producto;
 import com.inventario.productos.ProductosBBDD;
 import com.inventario.util.Util;
 
+/** Clase para gestionar las ventas */
 public class GestionVentas {
 
+    /**
+     * Inserta un nuevo cliente a partir de la venta.
+     * 
+     * @param scanner Scanner para la entrada del usuario.
+     * @return true si el cliente se ha insertado correctamente.
+     * @throws SQLException          Si ocurre un error al interactuar con la base
+     *                               de datos.
+     * @throws DatoInvalidoException Si se introduce un dato inválido.
+     */
     private static boolean insertarClienteDesdeVentas(Scanner scanner) throws SQLException, DatoInvalidoException {
         System.out.println("\n--- CREAR CLIENTE PARA LA VENTA ---");
 
@@ -34,18 +44,19 @@ public class GestionVentas {
     }
 
     /**
-     * Orquesta la consulta de detalles y el cálculo del total (usando la Función).
+     * Consulta los detalles de una venta y muestra su total.
+     * 
+     * @param scanner El objeto Scanner para leer la entrada del usuario.
+     * @throws SQLException Si ocurre un error al interactuar con la base de datos.
      */
     private static void consultarDetallesConTotal(Scanner scanner) throws SQLException {
         System.out.println("\n--- DETALLES DE VENTA ---");
         int idVenta = Util.pedirNumeroMinimo(scanner, "Introduce el ID de la venta:", 1);
 
-        // 1. Imprime la lista de detalles (sin clase auxiliar)
         boolean existenDetalles = VentasBBDD.imprimirDetallesVenta(idVenta);
 
-        // 2. Si se imprimieron detalles, llamamos a la Función para el total
         if (existenDetalles) {
-            double total = VentasBBDD.calcularTotalVentaConFuncion(idVenta);
+            double total = VentasBBDD.calcularTotalVenta(idVenta);
             System.out.println("---------------------------------------------------------------");
             System.out.printf("TOTAL VENTA: %.2f\n", total);
         }
@@ -81,14 +92,16 @@ public class GestionVentas {
     }
 
     /**
-     * Gestiona el ciclo de ventas completo con transacción manual.
+     * Gestiona la creación de cabecera, detalles y cálculo del total (usando la
+     * Función).
+     * 
+     * @param scanner Scanner para la entrada del usuario.
      */
     private static void guardarVenta(Scanner scanner) {
         System.out.println("\n--- INICIANDO SESIÓN DE VENTAS ---");
         boolean finalizado = false;
 
         try (Connection con = ConexionBBDD.obtenerConexion()) {
-            // 1. Inicio de la Transacción Global
             con.setAutoCommit(false);
 
             boolean continuarVendiendo = true;
@@ -96,41 +109,33 @@ public class GestionVentas {
             do {
                 System.out.println("\n--- NUEVA VENTA ---");
 
-                // 2. Savepoint al inicio de CADA venta individual
                 Savepoint spInicioVenta = con.setSavepoint("InicioVenta");
 
                 try {
-                    // A. Recolección de datos (Cliente y Productos)
                     int idCliente = seleccionarCliente(scanner);
                     List<DetalleVenta> detalles = seleccionarProductos(scanner);
 
                     if (detalles.isEmpty()) {
                         System.out.println("Venta vacía. Cancelando esta venta...");
-                        con.rollback(spInicioVenta); // Limpiamos por si acaso
+                        con.rollback(spInicioVenta);
                     } else {
-                        // B. Registro en BBDD (Cabecera + Detalles)
                         int idVenta = VentasBBDD.insertarCabeceraVenta(con, idCliente);
                         double total = VentasBBDD.procesarDetalles(con, idVenta, detalles);
 
-                        // C. Confirmación de precio
                         System.out.printf("\n>> TOTAL A PAGAR: %.2f €\n", total);
                         int confirma = Util.pedirSiNO(scanner, "¿El cliente acepta la compra?");
 
                         if (confirma == 2) {
-                            // NO acepta -> Rollback al Savepoint (Borra esta venta)
                             con.rollback(spInicioVenta);
                             System.out.println("Venta rechazada. Deshaciendo cambios de esta venta.");
                         } else {
-                            // SI acepta -> Cobrar y preguntar cancelación global
                             VentasBBDD.cobrarCliente(con, idCliente, total);
                             System.out.println("Venta aceptada y saldo descontado.");
 
-                            // D. Opción de Pánico (Cancelar TODO el lote)
                             int cancelarTodo = Util.pedirSiNO(scanner,
                                     "¿Desea CANCELAR TODO el proceso de ventas acumulado hasta ahora?");
 
                             if (cancelarTodo == 1) {
-                                // ROLLBACK TOTAL (Borra todas las ventas de la sesión)
                                 con.rollback();
                                 System.out.println(
                                         "!!! PROCESO CANCELADO. Se han deshecho TODAS las ventas de la sesión.");
@@ -159,7 +164,6 @@ public class GestionVentas {
                 }
             } while (continuarVendiendo);
 
-            // 3. Finalización: Commit Total
             if (!con.getAutoCommit() && finalizado) { // Si seguimos en transacción
                 con.commit();
                 System.out.println("\n=== SESIÓN FINALIZADA ===");
@@ -173,8 +177,6 @@ public class GestionVentas {
             System.err.println("Error inesperado: " + e.getMessage());
         }
     }
-
-    // --- Métodos auxiliares para limpiar el código principal ---
 
     private static int seleccionarCliente(Scanner scanner) throws SQLException {
         int idCliente;
@@ -201,9 +203,6 @@ public class GestionVentas {
             GestionDeProductos.listarProductos();
             int idProd = Util.pedirNumeroMinimo(scanner, "ID Producto:", 1);
 
-            // Nota: Aquí usamos ProductosBBDD.buscarPorCampo que abre su propia conexión
-            // (lectura).
-            // Esto está bien, no interfiere con la transacción de escritura principal.
             List<Producto> prods = ProductosBBDD.buscarPorCampo("id_producto", idProd);
 
             if (!prods.isEmpty()) {

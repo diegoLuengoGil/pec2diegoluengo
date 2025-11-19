@@ -11,14 +11,17 @@ import java.util.List;
 
 import com.inventario.conexion.ConexionBBDD;
 
+/**
+ * Clase para gestionar las ventas en la BBDD
+ * 
+ * @author Diego Luengo Gil
+ */
 public class VentasBBDD {
 
-    // ... (Tus métodos existentes: insertarCabeceraVenta, actualizarStockProducto,
-    // etc.)
-
     /**
-     * Imprime un resumen de las ventas (JOIN con Cliente).
-     * No devuelve nada (void), evitando clases auxiliares.
+     * Imprime el resumen de ventas (JOIN con Cliente).
+     * 
+     * @throws SQLException Si ocurre un error al interactuar con la base de datos.
      */
     public static void imprimirResumenVentas() throws SQLException {
         String sql = "SELECT v.id_venta, v.id_cliente, c.nombre "
@@ -50,8 +53,9 @@ public class VentasBBDD {
     }
 
     /**
-     * Imprime los detalles de una venta específica (JOIN con Producto).
-     * Devuelve true si encontró detalles, false si no.
+     * Imprime el detalle de una venta (JOIN con Producto).
+     * 
+     * @throws SQLException Si ocurre un error al interactuar con la base de datos.
      */
     public static boolean imprimirDetallesVenta(int idVenta) throws SQLException {
         String sql = "SELECT d.cantidad, d.precio_unitario, p.nombre "
@@ -66,7 +70,6 @@ public class VentasBBDD {
             try (ResultSet rs = ps.executeQuery()) {
 
                 while (rs.next()) {
-                    // Si es la primera fila, imprimimos la cabecera
                     if (!hayDetalles) {
                         hayDetalles = true;
                         System.out.printf("%-25s | %-10s | %-10s | %s\n", "PRODUCTO", "CANTIDAD", "PRECIO U.",
@@ -80,7 +83,7 @@ public class VentasBBDD {
                             rs.getString("nombre"),
                             cantidad,
                             precio,
-                            (cantidad * precio)); // Calculamos subtotal al vuelo
+                            (cantidad * precio));
                 }
             }
         }
@@ -92,35 +95,35 @@ public class VentasBBDD {
     }
 
     /**
-     * Llama a la Función Almacenada 'CalcularTotalVenta'
-     * y devuelve el total calculado.
+     * Calcula el total de una venta (usando la Función).
+     * 
+     * @throws SQLException Si ocurre un error al interactuar con la base de datos.
      */
-    public static double calcularTotalVentaConFuncion(int idVenta) throws SQLException {
+    public static double calcularTotalVenta(int idVenta) throws SQLException {
         double total = 0.0;
-        // Sintaxis para llamar a una Función que retorna un valor
         String sql = "{? = CALL CalcularTotalVenta(?)}";
 
         try (Connection con = ConexionBBDD.obtenerConexion();
                 CallableStatement cs = con.prepareCall(sql)) {
-
-            // 1. Registrar el parámetro de SALIDA (el retorno de la función)
             cs.registerOutParameter(1, Types.DECIMAL);
 
-            // 2. Asignar el parámetro de ENTRADA
             cs.setInt(2, idVenta);
-
-            // 3. Ejecutar
             cs.execute();
 
-            // 4. Recuperar el valor de salida
             total = cs.getDouble(1);
         }
         return total;
     }
 
     /**
-     * Inserta la cabecera de la venta y devuelve el ID generado.
-     * Nota: Recibe la conexión, no la crea.
+     * Inserta una nueva cabecera de venta con el ID del cliente proporcionado y
+     * devuelve
+     * el ID de la venta generada.
+     * 
+     * @param con       La conexión a la base de datos.
+     * @param idCliente El ID del cliente.
+     * @return El ID de la venta generada.
+     * @throws SQLException Si ocurre un error al interactuar con la base de datos.
      */
     public static int insertarCabeceraVenta(Connection con, int idCliente) throws SQLException {
         int idVenta = -1;
@@ -144,9 +147,13 @@ public class VentasBBDD {
     }
 
     /**
-     * Procesa la lista de detalles llamando al SP y ahora solo calcula el total (el
-     * SP actualiza stock).
-     * Retorna el total acumulado de la venta.
+     * Procesa una lista de detalles de venta y devuelve el total de la venta.
+     * 
+     * @param con      La conexión a la base de datos.
+     * @param idVenta  El ID de la venta.
+     * @param detalles La lista de detalles de la venta.
+     * @return El total de la venta.
+     * @throws SQLException Si ocurre un error al interactuar con la base de datos.
      */
     public static double procesarDetalles(Connection con, int idVenta, List<DetalleVenta> detalles)
             throws SQLException {
@@ -168,7 +175,6 @@ public class VentasBBDD {
                 int estado = cs.getInt(5);
 
                 if (estado == 1) {
-                    // ¡ELIMINADA LA LLAMADA A actualizarStockProducto!
                     totalVenta += subtotal;
                 } else {
                     String error = (estado == -1) ? "Stock insuficiente" : "Producto no encontrado";
@@ -180,12 +186,17 @@ public class VentasBBDD {
     }
 
     /**
-     * Cobra al cliente (resta dinero).
+     * Actualiza el saldo del cliente en la BBDD.
+     * 
+     * @param con       La conexión a la base de datos.
+     * @param idCliente El ID del cliente.
+     * @param monto     La cantidad a restar al saldo del cliente.
+     * @throws SQLException Si ocurre un error al interactuar con la base de datos.
      */
-    public static void cobrarCliente(Connection con, int idCliente, double monto) throws SQLException {
+    public static void cobrarCliente(Connection con, int idCliente, double cantidad) throws SQLException {
         String sql = "UPDATE cliente SET dinero = dinero - ? WHERE id_cliente = ?";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setDouble(1, monto);
+            ps.setDouble(1, cantidad);
             ps.setInt(2, idCliente);
             if (ps.executeUpdate() == 0) {
                 // Esto saltará si el cliente no existe, pero la restricción de saldo negativo

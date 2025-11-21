@@ -34,7 +34,7 @@ public class GestionBBDD {
                 hayFilas = true;
                 for (int i = 1; i <= numeroColumnas; i++) {
                     Object valor = rs.getObject(i);
-                    System.out.printf("%-25s", (valor != null ? valor.toString() : "NULL"));
+                    System.out.printf("%-25s", valor);
                 }
                 System.out.println();
             }

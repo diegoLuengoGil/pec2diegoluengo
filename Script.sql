@@ -1,6 +1,5 @@
 -- ======================================
 -- Script: Creación de base de datos
--- Proyecto: Gestor de inventario y ventas
 -- ======================================
 
 -- Crear base de datos
@@ -41,8 +40,8 @@ CREATE TABLE IF NOT EXISTS Venta (
 );
 
 -- ======================================
--- Tabla: DetalleVenta
--- ======================================
+    -- Tabla: DetalleVenta
+    -- ======================================
 CREATE TABLE IF NOT EXISTS DetalleVenta (
     id_detalle INT AUTO_INCREMENT PRIMARY KEY,
     id_venta INT NOT NULL,
@@ -55,7 +54,7 @@ CREATE TABLE IF NOT EXISTS DetalleVenta (
 
 
 DELIMITER //
-CREATE PROCEDURE RegistrarDetalleVenta( -- Se usa OR REPLACE por si ya existe
+CREATE PROCEDURE RegistrarDetalleVenta( 
     IN p_idVenta INT,       
     IN p_idProducto INT,      
     IN p_cantidad INT,        
@@ -65,26 +64,24 @@ CREATE PROCEDURE RegistrarDetalleVenta( -- Se usa OR REPLACE por si ya existe
 BEGIN
     DECLARE stock_actual INT;
     
-    -- 1. Verificar stock actual (y existencia del producto)
+    
     SELECT stock INTO stock_actual 
     FROM producto 
     WHERE id_producto = p_idProducto;
     
     IF stock_actual IS NULL THEN
-        SET p_estado = -2; -- Producto no encontrado
+        SET p_estado = -2;
     ELSEIF stock_actual < p_cantidad THEN
-        SET p_estado = -1; -- Stock insuficiente
+        SET p_estado = -1;
     ELSE
-        -- 2. Insertar el detalle de la venta
         INSERT INTO DetalleVenta (id_venta, id_producto, cantidad, precio_unitario)
         VALUES (p_idVenta, p_idProducto, p_cantidad, p_precioUnitario);
         
-        -- 3. Actualizar el stock del producto (¡NUEVO!)
         UPDATE producto 
         SET stock = stock - p_cantidad 
         WHERE id_producto = p_idProducto;
         
-        SET p_estado = 1; -- Éxito
+        SET p_estado = 1;
     END IF;
 END //
 DELIMITER ;
@@ -96,13 +93,11 @@ RETURNS DECIMAL(10,2)
 DETERMINISTIC
 BEGIN
     DECLARE total DECIMAL(10,2);
-    
-    -- Suma (cantidad * precio_unitario) para la venta dada
+
     SELECT SUM(cantidad * precio_unitario) INTO total 
     FROM detalleVenta
     WHERE id_venta = p_id_venta;
     
-    -- Devuelve 0.0 si no hay detalles (IFNULL)
     RETURN IFNULL(total, 0.0);
 END //
 

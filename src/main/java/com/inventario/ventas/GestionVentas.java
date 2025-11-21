@@ -73,7 +73,7 @@ public class GestionVentas {
             System.out.println("=================================");
             System.out.print("Selecciona una opción: ");
 
-            opcion = Util.pedirNumeroConRango(scanner, null, 0, 2);
+            opcion = Util.pedirNumeroConRango(scanner, "", 0, 2);
 
             try {
                 switch (opcion) {
@@ -138,7 +138,7 @@ public class GestionVentas {
                             if (cancelarTodo == 1) {
                                 con.rollback();
                                 System.out.println(
-                                        "!!! PROCESO CANCELADO. Se han deshecho TODAS las ventas de la sesión.");
+                                        "PROCESO CANCELADO. Se han deshecho TODAS las ventas de la sesión.");
                                 continuarVendiendo = false;
                             }
                         }

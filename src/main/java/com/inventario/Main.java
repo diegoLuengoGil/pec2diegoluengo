@@ -2,8 +2,8 @@ package com.inventario;
 
 import java.util.Scanner;
 
+import com.inventario.bbdd.ConexionBBDD;
 import com.inventario.clientes.GestionDeClientes;
-import com.inventario.conexion.ConexionBBDD;
 import com.inventario.productos.GestionDeProductos;
 import com.inventario.util.Util;
 import com.inventario.ventas.GestionVentas;

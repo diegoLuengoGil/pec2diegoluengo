@@ -70,7 +70,7 @@ public class GestionDeProductos {
                     System.out.println("0. Salir");
                     System.out.print("Opción: ");
 
-                    opcion = Util.pedirNumeroMinimo(scanner, "", 1);
+                    opcion = Util.pedirNumeroMinimo(scanner, "", 0);
 
                     switch (opcion) {
                         case 1 -> {

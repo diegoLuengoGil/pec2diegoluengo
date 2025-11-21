@@ -8,7 +8,8 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.inventario.conexion.ConexionBBDD;
+import com.inventario.bbdd.ConexionBBDD;
+import com.inventario.bbdd.GestionBBDD;
 import com.inventario.excepciones.DatoInvalidoException;
 
 /**
@@ -252,6 +253,6 @@ public class ClientesBBDD {
      * Imprime la tabla de clientes usando metadatos.
      */
     public static void imprimirClientes() {
-        ConexionBBDD.imprimirTabla("SELECT * FROM cliente");
+        GestionBBDD.imprimirTabla("SELECT * FROM cliente");
     }
 }

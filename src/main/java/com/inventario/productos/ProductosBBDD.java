@@ -8,7 +8,8 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.inventario.conexion.ConexionBBDD;
+import com.inventario.bbdd.ConexionBBDD;
+import com.inventario.bbdd.GestionBBDD;
 import com.inventario.excepciones.DatoInvalidoException;
 
 /**
@@ -192,6 +193,6 @@ public class ProductosBBDD {
      * Imprime la tabla de productos usando metadatos.
      */
     public static void imprimirProductos() {
-        ConexionBBDD.imprimirTabla("SELECT * FROM producto");
+        GestionBBDD.imprimirTabla("SELECT * FROM producto");
     }
 }

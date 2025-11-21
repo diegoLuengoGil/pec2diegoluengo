@@ -9,7 +9,7 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.List;
 
-import com.inventario.conexion.ConexionBBDD;
+import com.inventario.bbdd.ConexionBBDD;
 
 /**
  * Clase para gestionar las ventas en la BBDD

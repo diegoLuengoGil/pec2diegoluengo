@@ -7,10 +7,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+import com.inventario.bbdd.ConexionBBDD;
 import com.inventario.clientes.Cliente;
 import com.inventario.clientes.ClientesBBDD;
 import com.inventario.clientes.GestionDeClientes;
-import com.inventario.conexion.ConexionBBDD;
 import com.inventario.excepciones.DatoInvalidoException;
 import com.inventario.productos.GestionDeProductos;
 import com.inventario.productos.Producto;

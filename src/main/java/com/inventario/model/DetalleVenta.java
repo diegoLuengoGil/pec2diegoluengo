@@ -1,67 +1,105 @@
 package com.inventario.model;
 
 import com.inventario.excepciones.DatoInvalidoException;
+import jakarta.persistence.*;
 
 /**
  * Clase que representa un detalle de venta.
  */
+@Entity
+@Table(name = "detalle_venta")
 public class DetalleVenta {
     /**
      * ID del detalle de venta.
      */
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_detalle")
     private int id;
-    /**
-     * ID de la venta.
-     */
-    private int idVenta;
-    /**
-     * ID del producto.
-     */
-    private int idProducto;
-    /**
-     * Cantidad del producto.
-     */
+
+    @ManyToOne
+    @JoinColumn(name = "id_venta")
+    private Venta venta;
+
+    @ManyToOne
+    @JoinColumn(name = "id_producto", nullable = false)
+    private Producto producto;
+
+    @Column(name = "cantidad", nullable = false)
     private int cantidad;
-    /**
-     * Precio unitario del producto.
-     */
+
+    @Column(name = "precio_unitario", nullable = false)
     private double precioUnitario;
 
     /**
-     * Constructor para crear un nuevo detalle de venta.
-     * 
-     * @param id             ID del detalle de venta.
-     * @param idVenta        ID de la venta.
-     * @param idProducto     ID del producto.
-     * @param cantidad       Cantidad del producto.
-     * @param precioUnitario Precio unitario del producto.
-     * @throws DatoInvalidoException Si la cantidad es inválida.
+     * Constructor vacío para JPA.
      */
-    public DetalleVenta(int id, int idVenta, int idProducto, int cantidad, double precioUnitario)
+    public DetalleVenta() {
+    }
+
+    /**
+     * Constructor para crear un nuevo detalle de venta con objetos.
+     * 
+     * @param id             ID del detalle.
+     * @param venta          Venta asociada.
+     * @param producto       Producto asociado.
+     * @param cantidad       Cantidad.
+     * @param precioUnitario Precio unitario.
+     * @throws DatoInvalidoException
+     */
+    public DetalleVenta(int id, Venta venta, Producto producto, int cantidad, double precioUnitario)
             throws DatoInvalidoException {
         validarCantidad(cantidad);
-
         this.id = id;
-        this.idVenta = idVenta;
-        this.idProducto = idProducto;
+        this.venta = venta;
+        this.producto = producto;
         this.cantidad = cantidad;
         this.precioUnitario = precioUnitario;
     }
 
     /**
-     * Constructor para crear un nuevo detalle de venta.
+     * Constructor para crear un nuevo detalle de venta sin ID.
      * 
-     * @param idVenta        ID de la venta.
-     * @param idProducto     ID del producto.
-     * @param cantidad       Cantidad del producto.
-     * @param precioUnitario Precio unitario del producto.
-     * @throws DatoInvalidoException Si la cantidad es inválida.
+     * @param venta          Venta asociada.
+     * @param producto       Producto asociado.
+     * @param cantidad       Cantidad.
+     * @param precioUnitario Precio unitario.
+     * @throws DatoInvalidoException
      */
-    public DetalleVenta(int idVenta, int idProducto, int cantidad, double precioUnitario) throws DatoInvalidoException {
+    public DetalleVenta(Venta venta, Producto producto, int cantidad, double precioUnitario)
+            throws DatoInvalidoException {
         validarCantidad(cantidad);
+        this.venta = venta;
+        this.producto = producto;
+        this.cantidad = cantidad;
+        this.precioUnitario = precioUnitario;
+    }
 
-        this.idVenta = idVenta;
-        this.idProducto = idProducto;
+    /**
+     * Constructor de compatibilidad (usado en VentaController).
+     * El objeto Venta será null y el Producto debe ser pasado correctamente (aunque
+     * aqui simulamos con ID si tenemos Producto o no).
+     * Como VentaController pasa IDs y precio, aqui tenemos un problema.
+     * VentaController hace: new DetalleVenta(0, 0, p.getId(), cant, p.getPrecio())
+     * Pero p.getId() es un int. No podemos asignar int a Producto.
+     * Necesitamos un constructor que acepte (int, int, int, int, double) y cree un
+     * Producto dummy?
+     * No, Hibernate fallará al persistir.
+     * Pero esto es para JDBC por ahora. Para JDBC solo necesitamos getIdProducto().
+     * Crearemos un objeto Producto dummy con ese ID para que getIdProducto()
+     * funcione.
+     */
+    public DetalleVenta(int id, int idVenta, int idProducto, int cantidad, double precioUnitario)
+            throws DatoInvalidoException {
+        validarCantidad(cantidad);
+        this.id = id;
+        // Dummy Venta and Producto for ID holding
+        this.venta = new Venta();
+        this.venta.setId(idVenta);
+
+        this.producto = new Producto();
+        this.producto.setId(idProducto);
+
         this.cantidad = cantidad;
         this.precioUnitario = precioUnitario;
     }
@@ -78,93 +116,65 @@ public class DetalleVenta {
         }
     }
 
-    /**
-     * Obtiene el ID del detalle de venta.
-     * 
-     * @return ID del detalle de venta.
-     */
     public int getId() {
         return id;
     }
 
-    /**
-     * Establece el ID del detalle de venta.
-     * 
-     * @param id ID del detalle de venta.
-     */
     public void setId(int id) {
         this.id = id;
     }
 
-    /**
-     * Obtiene el ID de la venta.
-     * 
-     * @return ID de la venta.
-     */
-    public int getIdVenta() {
-        return idVenta;
+    public Venta getVenta() {
+        return venta;
     }
 
-    /**
-     * Establece el ID de la venta.
-     * 
-     * @param idVenta ID de la venta.
-     */
-    public void setIdVenta(int idVenta) {
-        this.idVenta = idVenta;
+    public void setVenta(Venta venta) {
+        this.venta = venta;
     }
 
-    /**
-     * Obtiene el ID del producto.
-     * 
-     * @return ID del producto.
-     */
-    public int getIdProducto() {
-        return idProducto;
+    public Producto getProducto() {
+        return producto;
     }
 
-    /**
-     * Establece el ID del producto.
-     * 
-     * @param idProducto ID del producto.
-     */
-    public void setIdProducto(int idProducto) {
-        this.idProducto = idProducto;
+    public void setProducto(Producto producto) {
+        this.producto = producto;
     }
 
-    /**
-     * Obtiene la cantidad del producto.
-     * 
-     * @return Cantidad del producto.
-     */
     public int getCantidad() {
         return cantidad;
     }
 
-    /**
-     * Establece la cantidad del producto.
-     * 
-     * @param cantidad Cantidad del producto.
-     */
     public void setCantidad(int cantidad) {
         this.cantidad = cantidad;
     }
 
-    /**
-     * Obtiene el precio unitario del producto.
-     * 
-     * @return Precio unitario del producto.
-     */
     public double getPrecioUnitario() {
         return precioUnitario;
     }
 
-    /**
-     * Establece el precio unitario del producto.
-     * 
-     * @param precioUnitario Precio unitario del producto.
-     */
     public void setPrecioUnitario(double precioUnitario) {
         this.precioUnitario = precioUnitario;
+    }
+
+    // Métodos de compatibilidad
+    public int getIdVenta() {
+        return venta != null ? venta.getId() : 0;
+    }
+
+    public int getIdProducto() {
+        return producto != null ? producto.getId() : 0;
+    }
+
+    // Setters de compatibilidad (para VentaRepository JDBC)
+    public void setIdVenta(int idVenta) {
+        if (this.venta == null)
+            this.venta = new Venta();
+        this.venta.setId(idVenta);
+    }
+
+    public void setIdProducto(int idProducto) {
+        if (this.producto == null)
+            this.producto = new Producto();
+        this.producto.setId(idProducto);
     }
 }

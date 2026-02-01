@@ -1,20 +1,40 @@
 package com.inventario.model;
 
 import com.inventario.excepciones.DatoInvalidoException;
+import jakarta.persistence.*;
 
 /**
  * Clase que representa un cliente.
  */
+@Entity
+@Table(name = "cliente")
 public class Cliente {
 
     /**
      * ID del cliente.
      */
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_cliente")
     private int id;
+
+    @Column(name = "nombre", nullable = false)
     private String nombre;
+
+    @Column(name = "email", nullable = false)
     private String email;
+
+    @Column(name = "telefono", nullable = false)
     private String telefono;
+
+    @Column(name = "dinero", nullable = false)
     private double dinero;
+
+    /**
+     * Constructor vacío para JPA.
+     */
+    public Cliente() {
+    }
 
     /**
      * Constructor con ID (usado al obtener de la base de datos).

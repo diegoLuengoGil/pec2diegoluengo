@@ -1,31 +1,47 @@
 package com.inventario.model;
 
 import com.inventario.excepciones.DatoInvalidoException;
+import jakarta.persistence.*;
 
 /**
  * Clase que representa un producto con sus atributos y métodos.
  */
+@Entity
+@Table(name = "producto")
 public class Producto {
     /**
      * ID del producto.
      */
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_producto")
     private int id;
     /**
      * Nombre del producto.
      */
+    @Column(name = "nombre", nullable = false)
     private String nombre;
     /**
      * Descripción del producto.
      */
+    @Column(name = "descripcion")
     private String descripcion;
     /**
      * Precio del producto.
      */
+    @Column(name = "precio", nullable = false)
     private double precio;
     /**
      * Stock del producto.
      */
+    @Column(name = "stock", nullable = false)
     private int stock;
+
+    /**
+     * Constructor vacío para JPA.
+     */
+    public Producto() {
+    }
 
     /**
      * Constructor que crea un nuevo producto con todos los atributos.

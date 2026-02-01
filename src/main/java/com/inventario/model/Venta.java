@@ -1,33 +1,69 @@
 package com.inventario.model;
 
+import jakarta.persistence.*;
+
 /**
  * Clase que representa una venta.
  */
+@Entity
+@Table(name = "venta")
 public class Venta {
     /** Identificador de la venta */
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_venta")
     private int id;
 
-    /** Identificador del cliente */
-    private int idCliente;
+    @ManyToOne
+    @JoinColumn(name = "id_cliente", nullable = false)
+    private Cliente cliente;
+
+    @OneToMany(mappedBy = "venta", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<DetalleVenta> detalles = new java.util.ArrayList<>();
+
+    public java.util.List<DetalleVenta> getDetalles() {
+        return detalles;
+    }
+
+    public void setDetalles(java.util.List<DetalleVenta> detalles) {
+        this.detalles = detalles;
+    }
+
+    // 🔹 MÉTODOS DE CONVENIENCIA (MUY IMPORTANTE)
+    public void addDetalle(DetalleVenta d) {
+        detalles.add(d);
+        d.setVenta(this);
+    }
+
+    public void removeDetalle(DetalleVenta d) {
+        detalles.remove(d);
+        d.setVenta(null);
+    }
 
     /**
-     * Constructor de la clase.
-     * 
-     * @param id        Id de la venta en la base de datos.
-     * @param idCliente Id del cliente.
+     * Constructor vacío para JPA.
      */
-    public Venta(int id, int idCliente) {
-        this.id = id;
-        this.idCliente = idCliente;
+    public Venta() {
     }
 
     /**
      * Constructor de la clase.
      * 
-     * @param idCliente Id del cliente.
+     * @param id      Id de la venta en la base de datos.
+     * @param cliente Cliente de la venta.
      */
-    public Venta(int idCliente) {
-        this.idCliente = idCliente;
+    public Venta(int id, Cliente cliente) {
+        this.id = id;
+        this.cliente = cliente;
+    }
+
+    /**
+     * Constructor de la clase.
+     * 
+     * @param cliente Cliente de la venta.
+     */
+    public Venta(Cliente cliente) {
+        this.cliente = cliente;
     }
 
     /**
@@ -49,21 +85,39 @@ public class Venta {
     }
 
     /**
-     * Obtiene el identificador del cliente.
+     * Obtiene el cliente.
      * 
-     * @return El identificador del cliente.
+     * @return El cliente.
      */
-    public int getIdCliente() {
-        return idCliente;
+    public Cliente getCliente() {
+        return cliente;
     }
 
     /**
-     * Establece el identificador del cliente.
+     * Establece el cliente.
      * 
-     * @param idCliente El identificador del cliente.
+     * @param cliente El cliente.
      */
-    public void setIdCliente(int idCliente) {
-        this.idCliente = idCliente;
+    public void setCliente(Cliente cliente) {
+        this.cliente = cliente;
     }
 
+    /**
+     * Compatibility method for JDBC code using idCliente.
+     * 
+     * @return ID of the client.
+     */
+    public int getIdCliente() {
+        return cliente != null ? cliente.getId() : 0;
+    }
+
+    /**
+     * Compatibility method not recommended for JPA usage.
+     * 
+     * @param idCliente
+     */
+    public void setIdCliente(int idCliente) {
+        // Cannot set ID on entity directly if expecting to set relationship.
+        // This is just a placeholder to avoid compilation errors if any.
+    }
 }

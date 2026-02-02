@@ -1,7 +1,13 @@
-# Gestor de Inventario y Ventas
+# Gestor de Inventario y Ventas (Versión JPA/Hibernate)
 
 ## Resumen General
-Este proyecto es una aplicación de consola en Java diseñada para la gestión integral de una tienda. Permite administrar el inventario de productos, gestionar la cartera de clientes y realizar ventas con control transaccional. El sistema se conecta a una base de datos MySQL para la persistencia de datos, asegurando la integridad y consistencia de la información.
+Esta proyecto es una aplicación de consola en Java refactorizada para utilizar **JPA (Java Persistence API)** con **Hibernate** como proveedor de persistencia. Permite administrar el inventario de productos, gestionar clientes y registrar ventas de manera transaccional y robusta, cumpliendo con los estándares de la arquitectura MVC y patrones de diseño Repository/Service.
+
+## Características Principales
+*   **Arquitectura en Capas**: MVC (Model-View-Controller) + capas de Servicio y Repositorio.
+*   **Persistencia ORM**: Uso de Hibernate 6 para el mapeo objecto-relacional, eliminando SQL nativo en el código Java.
+*   **Transaccionalidad ACID**: Las ventas se realizan en una única transacción atómica; si falla el stock o el saldo, se revierte toda la operación (rollback).
+*   **Validación de Esquema**: Configurado para validar estrictamente que las clases Java coincidan con el esquema de base de datos (`hibernate.hbm2ddl.auto=validate`).
 
 ## Autor
 **Diego Luengo Gil**
@@ -11,82 +17,64 @@ Este proyecto es una aplicación de consola en Java diseñada para la gestión i
 ### Árbol de Directorios
 ```
 src/main/java/com/inventario
-├── Main.java
-├── bbdd
-│   ├── ConexionBBDD.java
-│   └── GestionBBDD.java
-├── clientes
+├── Main.java                 # Punto de entrada
+├── controller                # Controladores (Orquestación)
+│   ├── GlobalController.java
+│   ├── ClienteController.java
+│   ├── ProductoController.java
+│   └── VentaController.java
+├── model                     # Entidades JPA (Base de Datos)
 │   ├── Cliente.java
-│   ├── ClientesBBDD.java
-│   └── GestionDeClientes.java
-├── excepciones
-│   └── DatoInvalidoException.java
-├── productos
-│   ├── GestionDeProductos.java
 │   ├── Producto.java
-│   └── ProductosBBDD.java
-├── util
-│   └── Util.java
-└── ventas
-    ├── DetalleVenta.java
-    ├── GestionVentas.java
-    ├── Venta.java
-    └── VentasBBDD.java
+│   ├── Venta.java
+│   └── DetalleVenta.java
+├── repository                # Acceso a Datos (DAO pattern con JPA)
+│   ├── ClienteRepository.java
+│   ├── ProductoRepository.java
+│   └── VentaRepository.java
+├── service                   # Lógica de Negocio
+│   ├── ClienteService.java
+│   ├── ProductoService.java
+│   └── VentaService.java
+├── view                      # Vistas (Interfaz de Consola)
+│   ├── MainView.java
+│   ├── ClienteView.java
+│   ├── ProductoView.java
+│   └── VentaView.java
+└── util
+    ├── JPAUtil.java          # Factoría de EntityManager (Singleton)
+    └── Util.java             # Herramientas de entrada de datos
 ```
 
-### Descripción de Paquetes y Clases
+### Descripción de Componentes Clave
 
-#### Paquete Principal (`com.inventario`)
-- **`Main.java`**: Punto de entrada. Inicia el menú principal y dirige el flujo hacia los diferentes módulos (productos, clientes, ventas).
-
-#### Paquete `bbdd`
-- **`ConexionBBDD.java`**: Gestiona la conexión JDBC leyendo la configuración desde `config.properties`.
-- **`GestionBBDD.java`**: Utilidades genéricas para consultas y visualización de tablas.
-
-#### Paquete `clientes`
-- **`Cliente.java`**: Modelo de datos del cliente con validaciones.
-- **`ClientesBBDD.java`**: Clase para operaciones CRUD en la tabla `cliente`.
-- **`GestionDeClientes.java`**: Lógica de menús para clientes.
-
-#### Paquete `productos`
-- **`Producto.java`**: Modelo de datos del producto.
-- **`ProductosBBDD.java`**: Clase para operaciones CRUD en la tabla `producto`.
-- **`GestionDeProductos.java`**: Lógica de menús para productos.
-
-#### Paquete `ventas`
-- **`Venta.java` / `DetalleVenta.java`**: Modelos de datos para ventas y sus líneas.
-- **`VentasBBDD.java`**: Clase con transacciones y llamadas a procedimientos almacenados.
-- **`GestionVentas.java`**: Flujo de venta interactivo (carrito, confirmación, rollback).
-
-#### Paquete `util`
-- **`Util.java`**: Herramientas para entrada de datos robusta y validaciones.
-
-#### Paquete `excepciones`
-- **`DatoInvalidoException.java`**: Excepción personalizada para reglas de negocio.
+*   **JPAUtil**: Gestiona el `EntityManagerFactory`. Se inicializa estáticamente y debe cerrarse al finalizar la aplicación.
+*   **VentaRepository**: Contiene el método `realizarVentaCompleta`, que ejecuta la lógica de negocio compleja (verificar stock, saldo, actualizar ambos y registrar venta) dentro de una transacción `EntityTransaction`.
+*   **persistence.xml**: Archivo de configuración estándar de JPA ubicado en `src/main/resources/META-INF/`.
 
 ## Instrucciones de Ejecución
 
 ### 1. Requisitos Previos
-- Java Development Kit (JDK) 17 o superior.
-- Servidor MySQL o MariaDB en ejecución.
-- Maven.
+*   Java Development Kit (JDK) 17 o superior.
+*   Servidor MySQL en local (puerto 3306).
 
-### 2. Configuración de la Base de Datos
-Antes de ejecutar la aplicación, es **CRUCIAL** configurar la conexión a la base de datos:
+### 2. Configuración de Base de Datos
+1.  Abre el archivo `Script.sql` ubicado en la raíz del proyecto.
+2.  Ejecuta todo el contenido en tu gestor de base de datos (MySQL Workbench) para crear la base de datos `tienda` y las tablas con los tipos correctos (`DOUBLE` para dinero/precio).
+    > **Importante:** El script usa tipos `DOUBLE` para coincidir con el tipo `double` de Java y pasar la validación de Hibernate.
 
-1.  Navega al archivo de configuración:
-    `src/main/resources/config.properties`
-2.  Abre el archivo y modifica los valores según tu configuración local de MySQL:
-    ```properties
-    db.url=jdbc:mysql://localhost:3306/tienda
-    db.user=TU_USUARIO_MYSQL      <-- Cambia esto (ej. root)
-    db.password=TU_CONTRASEÑA     <-- Cambia esto
-    ```
-    > **Nota:** Asegúrate de que el usuario tenga permisos para crear bases de datos y tablas, o ejecuta primero el script SQL manualmente.
+### 3. Configuración de Conexión (JPA)
+Verifica el archivo `src/main/resources/META-INF/persistence.xml`.
+Por defecto está configurado para:
+*   URL: `jdbc:mysql://localhost:3306/tienda`
+*   User: `root`
+*   Password: `root` (o vacía, o la que tú tengas).
 
-### 3. Inicialización de la Base de Datos
-El proyecto incluye un script SQL para crear la estructura necesaria.
--   Ejecuta el archivo `Script.sql` en tu gestor de base de datos (Workbench, DBeaver, consola) para crear la base de datos `tienda`, las tablas y los procedimientos almacenados.
+**Si tu contraseña de root es diferente**, edita la línea:
+```xml
+<property name="javax.persistence.jdbc.password" value="TU_CONTRASEÑA" />
+```
 
-### 4. Ejecutar la Aplicación
-Compila y ejecuta la clase `Main.java` desde tu IDE favorito (VS Code, IntelliJ, Eclipse).
+### 4. Ejecutar
+Compila y ejecuta la clase `com.inventario.Main`.
+Al iniciar, Hibernate validará el esquema y mostrará el menú principal si todo es correcto.

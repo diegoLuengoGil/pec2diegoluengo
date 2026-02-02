@@ -7,7 +7,7 @@ import jakarta.persistence.*;
  * Clase que representa un detalle de venta.
  */
 @Entity
-@Table(name = "detalle_venta")
+@Table(name = "DetalleVenta")
 public class DetalleVenta {
     /**
      * ID del detalle de venta.
@@ -16,18 +16,26 @@ public class DetalleVenta {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_detalle")
     private int id;
-
+    /**
+     * Venta asociada.
+     */
     @ManyToOne
-    @JoinColumn(name = "id_venta")
+    @JoinColumn(name = "id_venta", nullable = false)
     private Venta venta;
-
+    /**
+     * Producto asociado.
+     */
     @ManyToOne
     @JoinColumn(name = "id_producto", nullable = false)
     private Producto producto;
-
+    /**
+     * Cantidad del producto.
+     */
     @Column(name = "cantidad", nullable = false)
     private int cantidad;
-
+    /**
+     * Precio unitario del producto.
+     */
     @Column(name = "precio_unitario", nullable = false)
     private double precioUnitario;
 
@@ -37,22 +45,40 @@ public class DetalleVenta {
     public DetalleVenta() {
     }
 
-    // Métodos de compatibilidad
+    /**
+     * Obtiene el ID de la venta.
+     * 
+     * @return el ID de la venta
+     */
     public int getIdVenta() {
         return venta != null ? venta.getId() : 0;
     }
 
+    /**
+     * Obtiene el ID del producto.
+     * 
+     * @return el ID del producto
+     */
     public int getIdProducto() {
         return producto != null ? producto.getId() : 0;
     }
 
-    // Setters de compatibilidad (para VentaRepository JDBC)
+    /**
+     * Establece el ID de la venta.
+     * 
+     * @param idVenta el ID de la venta
+     */
     public void setIdVenta(int idVenta) {
         if (this.venta == null)
             this.venta = new Venta();
         this.venta.setId(idVenta);
     }
 
+    /**
+     * Establece el ID del producto.
+     * 
+     * @param idProducto el ID del producto
+     */
     public void setIdProducto(int idProducto) {
         if (this.producto == null)
             this.producto = new Producto();

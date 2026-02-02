@@ -1,6 +1,5 @@
 package com.inventario.controller;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,6 +15,9 @@ import com.inventario.view.ClienteView;
 import com.inventario.view.ProductoView;
 import com.inventario.view.VentaView;
 
+/**
+ * Clase que gestiona las operaciones de ventas.
+ */
 public class VentaController {
 
     private VentaService ventaService;
@@ -25,6 +27,16 @@ public class VentaController {
     private ClienteService clienteService;
     private ClienteView clienteView;
 
+    /**
+     * Constructor de la clase VentaController.
+     * 
+     * @param ventaService    el servicio de ventas
+     * @param ventaView       la vista de ventas
+     * @param productoService el servicio de productos
+     * @param productoView    la vista de productos
+     * @param clienteService  el servicio de clientes
+     * @param clienteView     la vista de clientes
+     */
     public VentaController(VentaService ventaService, VentaView ventaView,
             ProductoService productoService, ProductoView productoView,
             ClienteService clienteService, ClienteView clienteView) {
@@ -36,6 +48,9 @@ public class VentaController {
         this.clienteView = clienteView;
     }
 
+    /**
+     * Muestra el menú de consultas y ejecuta la opción seleccionada.
+     */
     public void menuConsultas() {
         int opcion;
         do {
@@ -48,106 +63,105 @@ public class VentaController {
         } while (opcion != 0);
     }
 
+    /**
+     * Lista un resumen de todas las ventas.
+     */
     private void listarResumenVentas() {
-        try {
-            List<String> ventas = ventaService.listarResumenVentas();
-            ventaView.mostrarResumenVentas(ventas);
-        } catch (SQLException e) {
-            ventaView.mostrarError("Error BBDD: " + e.getMessage());
-        }
+        List<String> ventas = ventaService.listarResumenVentas();
+        ventaView.mostrarResumenVentas(ventas);
     }
 
+    /**
+     * Consulta los detalles de una venta específica.
+     */
     private void consultarDetallesVenta() {
         int id = ventaView.pedirIdVenta();
-        try {
-            List<String> detalles = ventaService.listarDetallesVenta(id);
-            double total = ventaService.obtenerTotalVenta(id);
-            // Verify if exists? If empty, maybe not found or just empty.
-            if (!detalles.isEmpty()) {
-                ventaView.mostrarDetallesVenta(id, detalles, total);
-            } else {
-                ventaView.mostrarMensaje("No se encontraron detalles para la venta ID " + id);
-            }
-        } catch (SQLException e) {
-            ventaView.mostrarError("Error BBDD: " + e.getMessage());
+
+        List<String> detalles = ventaService.listarDetallesVenta(id);
+        double total = ventaService.obtenerTotalVenta(id);
+        // Verify if exists? If empty, maybe not found or just empty.
+        if (!detalles.isEmpty()) {
+            ventaView.mostrarDetallesVenta(id, detalles, total);
+        } else {
+            ventaView.mostrarMensaje("No se encontraron detalles para la venta ID " + id);
         }
+
     }
 
+    /**
+     * Crea una nueva venta.
+     */
     public void crearVenta() {
         ventaView.mostrarMensaje("\n--- CREAR VENTA ---");
-        try {
-            List<Producto> productos = productoService.listarProductos();
-            List<Cliente> clientes = clienteService.listarClientes();
 
-            if (productos.isEmpty()) {
-                ventaView.mostrarMensaje("No hay productos registrados.");
-            } else if (clientes.isEmpty()) {
-                ventaView.mostrarMensaje("No hay clientes registrados. Crea un cliente primero.");
-            } else {
-                int idCliente = -1;
-                boolean clienteValido = false;
-                do {
-                    clienteView.mostrarClientes(clientes);
-                    idCliente = ventaView.pedirIdCliente();
-                    if (clienteService.buscarClientePorId(idCliente) != null) {
-                        clienteValido = true;
-                    } else {
-                        ventaView.mostrarMensaje("Cliente no encontrado. Inténtalo de nuevo.");
-                    }
-                } while (!clienteValido);
+        List<Producto> productos = productoService.listarProductos();
+        List<Cliente> clientes = clienteService.listarClientes();
 
-                // Seleccionar Productos
-                List<DetalleVenta> detalles = new ArrayList<>();
-                double totalEstimado = 0.0;
-                int opcion;
+        if (productos.isEmpty()) {
+            ventaView.mostrarMensaje("No hay productos registrados.");
+        } else if (clientes.isEmpty()) {
+            ventaView.mostrarMensaje("No hay clientes registrados. Crea un cliente primero.");
+        } else {
+            int idCliente = -1;
+            boolean clienteValido = false;
+            do {
+                clienteView.mostrarClientes(clientes);
+                idCliente = ventaView.pedirIdCliente();
 
-                do {
-                    productoView.mostrarProductos(productos);
-                    int idProd = ventaView.pedirIdProducto();
-
-                    try {
-                        Producto p = productoService.buscarProductoPorId(idProd);
-                        if (p != null) {
-                            if (p.getStock() > 0) {
-                                int cant = ventaView.pedirCantidad(p.getStock());
-                                detalles.add(new DetalleVenta(0, 0, p.getId(), cant, p.getPrecio()));
-                                totalEstimado += (p.getPrecio() * cant);
-                                ventaView.mostrarMensaje("Añadido: " + p.getNombre() + " x" + cant);
-                            } else {
-                                ventaView.mostrarMensaje("Stock agotado para este producto.");
-                            }
-                        } else {
-                            ventaView.mostrarMensaje("Producto no encontrado.");
-                        }
-                    } catch (DatoInvalidoException e) {
-                        ventaView.mostrarMensaje("Error en datos del producto: " + e.getMessage());
-                    }
-
-                    opcion = ventaView.pedirSiNo("¿Añadir otro producto?");
-                } while (opcion == 1);
-
-                if (detalles.isEmpty()) {
-                    ventaView.mostrarMensaje("No se han seleccionado productos. Cancelando venta.");
+                if (clienteService.buscarClientePorId(idCliente) != null) {
+                    clienteValido = true;
                 } else {
-                    // Confirmación
-                    ventaView.mostrarMensaje(String.format("\n>> TOTAL A PAGAR: %.2f €", totalEstimado));
-                    if (ventaView.pedirSiNo("¿Confirmar venta y realizar cobro?") == 1) {
-                        try {
-                            ventaService.realizarVenta(idCliente, detalles);
-                            ventaView.mostrarMensaje(
-                                    "¡Venta realizada con éxito! Inventario actualizado y saldo descontado.");
-                        } catch (SQLException e) {
-                            ventaView.mostrarError("Error al procesar la venta: " + e.getMessage());
+                    ventaView.mostrarMensaje("Cliente no encontrado. Inténtalo de nuevo.");
+                }
+
+            } while (!clienteValido);
+
+            // Seleccionar Productos
+            List<DetalleVenta> detalles = new ArrayList<>();
+            double totalEstimado = 0.0;
+            int opcion;
+
+            do {
+                productoView.mostrarProductos(productos);
+                int idProd = ventaView.pedirIdProducto();
+
+                try {
+                    Producto p = productoService.buscarProductoPorId(idProd);
+                    if (p != null) {
+                        if (p.getStock() > 0) {
+                            int cant = ventaView.pedirCantidad(p.getStock());
+                            detalles.add(new DetalleVenta(0, 0, p.getId(), cant, p.getPrecio()));
+                            totalEstimado += (p.getPrecio() * cant);
+                            ventaView.mostrarMensaje("Añadido: " + p.getNombre() + " x" + cant);
+                        } else {
+                            ventaView.mostrarMensaje("Stock agotado para este producto.");
                         }
                     } else {
-                        ventaView.mostrarMensaje("Venta cancelada por el usuario.");
+                        ventaView.mostrarMensaje("Producto no encontrado.");
                     }
+                } catch (DatoInvalidoException e) {
+                    ventaView.mostrarMensaje("Error en datos del producto: " + e.getMessage());
+                }
+
+                opcion = ventaView.pedirSiNo("¿Añadir otro producto?");
+            } while (opcion == 1);
+
+            if (detalles.isEmpty()) {
+                ventaView.mostrarMensaje("No se han seleccionado productos. Cancelando venta.");
+            } else {
+                // Confirmación
+                ventaView.mostrarMensaje(String.format("\n>> TOTAL A PAGAR: %.2f €", totalEstimado));
+                if (ventaView.pedirSiNo("¿Confirmar venta y realizar cobro?") == 1) {
+
+                    ventaService.realizarVenta(idCliente, detalles);
+                    ventaView.mostrarMensaje(
+                            "¡Venta realizada con éxito! Inventario actualizado y saldo descontado.");
+
+                } else {
+                    ventaView.mostrarMensaje("Venta cancelada por el usuario.");
                 }
             }
-        } catch (SQLException e) {
-            ventaView.mostrarError("Error de base de datos: " + e.getMessage());
-        } catch (DatoInvalidoException e) {
-            ventaView.mostrarError("Error de datos: " + e.getMessage());
         }
+
     }
 }

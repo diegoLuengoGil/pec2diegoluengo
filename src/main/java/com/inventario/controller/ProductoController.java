@@ -1,6 +1,5 @@
 package com.inventario.controller;
 
-import java.sql.SQLException;
 import java.util.List;
 
 import com.inventario.excepciones.DatoInvalidoException;
@@ -8,16 +7,28 @@ import com.inventario.model.Producto;
 import com.inventario.service.ProductoService;
 import com.inventario.view.ProductoView;
 
+/**
+ * Clase que gestiona las operaciones de productos.
+ */
 public class ProductoController {
 
     private ProductoService productoService;
     private ProductoView productoView;
 
+    /**
+     * Constructor de la clase ProductoController.
+     * 
+     * @param productoService el servicio de productos
+     * @param productoView    la vista de productos
+     */
     public ProductoController(ProductoService productoService, ProductoView productoView) {
         this.productoService = productoService;
         this.productoView = productoView;
     }
 
+    /**
+     * Inicia el controlador.
+     */
     public void iniciar() {
         int opcion;
         do {
@@ -34,48 +45,52 @@ public class ProductoController {
         } while (opcion != 0);
     }
 
+    /**
+     * Lista todos los productos.
+     */
     private void listarProductos() {
-        try {
-            List<Producto> productos = productoService.listarProductos();
-            productoView.mostrarProductos(productos);
-        } catch (SQLException e) {
-            productoView.mostrarError("Error al listar productos: " + e.getMessage());
-        }
+        List<Producto> productos = productoService.listarProductos();
+        productoView.mostrarProductos(productos);
     }
 
+    /**
+     * Busca un producto por su ID.
+     */
     private void buscarProductoPorId() {
         int id = productoView.pedirIdProducto();
-        try {
-            Producto p = productoService.buscarProductoPorId(id);
-            if (p != null) {
-                productoView.mostrarProducto(p);
-            } else {
-                productoView.mostrarMensaje("No se encontró ningún producto con ese ID.");
-            }
-        } catch (SQLException e) {
-            productoView.mostrarError("Error al buscar el producto: " + e.getMessage());
-        } catch (DatoInvalidoException e) {
-            productoView.mostrarError("Datos inválidos: " + e.getMessage());
+
+        Producto p = productoService.buscarProductoPorId(id);
+        if (p != null) {
+            productoView.mostrarProducto(p);
+        } else {
+            productoView.mostrarMensaje("No se encontró ningún producto con ese ID.");
         }
+
     }
 
+    /**
+     * Inserta un nuevo producto.
+     */
     private void insertarProducto() {
         try {
             Producto p = productoView.pedirDatosProducto();
             productoService.insertarProducto(p);
             productoView.mostrarMensaje("Producto insertado correctamente.");
-        } catch (Exception e) {
-            productoView.mostrarError("Error al cancelar la operación o datos inválidos: " + e.getMessage());
+        } catch (DatoInvalidoException e) {
+            productoView.mostrarError("Datos invalidos: " + e.getMessage());
         }
     }
 
+    /**
+     * Actualiza un producto.
+     */
     private void actualizarProducto() {
-        try {
-            List<Producto> productos = productoService.listarProductos();
-            if (productos.isEmpty()) {
-                productoView.mostrarMensaje("No hay productos registrados.");
-                return;
-            }
+
+        List<Producto> productos = productoService.listarProductos();
+        if (productos.isEmpty()) {
+            productoView.mostrarMensaje("No hay productos registrados.");
+
+        } else {
             productoView.mostrarProductos(productos);
 
             int id = productoView.pedirIdProducto();
@@ -88,48 +103,47 @@ public class ProductoController {
             int opcion;
             do {
                 opcion = productoView.pedirOpcionActualizar();
-                try {
-                    boolean exito = false;
-                    switch (opcion) {
-                        case 1 -> {
-                            String nuevoNombre = productoView.pedirNuevoNombre();
-                            exito = productoService.actualizarProducto(id, "nombre", nuevoNombre);
-                        }
-                        case 2 -> {
-                            String nuevaDesc = productoView.pedirNuevaDescripcion();
-                            exito = productoService.actualizarProducto(id, "descripcion", nuevaDesc);
-                        }
-                        case 3 -> {
-                            double nuevoPrecio = productoView.pedirNuevoPrecio();
-                            exito = productoService.actualizarProducto(id, "precio", nuevoPrecio);
-                        }
-                        case 4 -> {
-                            int nuevoStock = productoView.pedirNuevoStock();
-                            exito = productoService.actualizarProducto(id, "stock", nuevoStock);
-                        }
-                        case 0 -> productoView.mostrarMensaje("Volviendo al menú anterior...");
-                        default -> productoView.mostrarMensaje("Opción no válida.");
-                    }
-                    if (opcion != 0 && exito)
-                        productoView.mostrarMensaje("Producto actualizado correctamente.");
-                    // if (opcion != 0 && !exito) // Could mean ID not found
-                } catch (SQLException e) {
-                    productoView.mostrarError("Error al actualizar: " + e.getMessage());
-                }
-            } while (opcion != 0);
 
-        } catch (SQLException e) {
-            productoView.mostrarError("Error al acceder a datos: " + e.getMessage());
+                boolean exito = false;
+                switch (opcion) {
+                    case 1 -> {
+                        String nuevoNombre = productoView.pedirNuevoNombre();
+                        exito = productoService.actualizarProducto(id, "nombre", nuevoNombre);
+                    }
+                    case 2 -> {
+                        String nuevaDesc = productoView.pedirNuevaDescripcion();
+                        exito = productoService.actualizarProducto(id, "descripcion", nuevaDesc);
+                    }
+                    case 3 -> {
+                        double nuevoPrecio = productoView.pedirNuevoPrecio();
+                        exito = productoService.actualizarProducto(id, "precio", nuevoPrecio);
+                    }
+                    case 4 -> {
+                        int nuevoStock = productoView.pedirNuevoStock();
+                        exito = productoService.actualizarProducto(id, "stock", nuevoStock);
+                    }
+                    case 0 -> productoView.mostrarMensaje("Volviendo al menú anterior...");
+                    default -> productoView.mostrarMensaje("Opción no válida.");
+                }
+                if (opcion != 0 && exito)
+                    productoView.mostrarMensaje("Producto actualizado correctamente.");
+                // if (opcion != 0 && !exito) // Could mean ID not found
+
+            } while (opcion != 0);
         }
+
     }
 
+    /**
+     * Elimina un producto.
+     */
     private void eliminarProducto() {
-        try {
-            List<Producto> productos = productoService.listarProductos();
-            if (productos.isEmpty()) {
-                productoView.mostrarMensaje("No hay productos registrados.");
-                return;
-            }
+
+        List<Producto> productos = productoService.listarProductos();
+        if (productos.isEmpty()) {
+            productoView.mostrarMensaje("No hay productos registrados.");
+
+        } else {
             productoView.mostrarProductos(productos);
 
             int id = productoView.pedirIdProducto();
@@ -139,8 +153,7 @@ public class ProductoController {
             } else {
                 productoView.mostrarMensaje("No se encontró ningún producto con ese ID.");
             }
-        } catch (SQLException e) {
-            productoView.mostrarError("Error al eliminar el producto: " + e.getMessage());
         }
+
     }
 }

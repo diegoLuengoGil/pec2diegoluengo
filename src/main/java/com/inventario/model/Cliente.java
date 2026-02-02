@@ -7,7 +7,7 @@ import jakarta.persistence.*;
  * Clase que representa un cliente.
  */
 @Entity
-@Table(name = "cliente")
+@Table(name = "Cliente")
 public class Cliente {
 
     /**
@@ -17,16 +17,24 @@ public class Cliente {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_cliente")
     private int id;
-
+    /**
+     * Nombre del cliente.
+     */
     @Column(name = "nombre", nullable = false)
     private String nombre;
-
+    /**
+     * Email del cliente.
+     */
     @Column(name = "email", nullable = false)
     private String email;
-
+    /**
+     * Teléfono del cliente.
+     */
     @Column(name = "telefono", nullable = false)
     private String telefono;
-
+    /**
+     * Dinero del cliente.
+     */
     @Column(name = "dinero", nullable = false)
     private double dinero;
 

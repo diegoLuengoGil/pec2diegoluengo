@@ -1,133 +1,181 @@
 package com.inventario.repository;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-import com.inventario.bbdd.ConexionBBDD;
-import com.inventario.excepciones.DatoInvalidoException;
 import com.inventario.model.Producto;
+import com.inventario.util.JPAUtil;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityTransaction;
+import jakarta.persistence.TypedQuery;
 
 /**
- * Repository for Producto data access operations.
+ * Clase que representa el repositorio de productos
  */
 public class ProductoRepository {
 
-    public int contarProductos() throws SQLException {
-        String sql = "SELECT COUNT(*) FROM producto";
+    /**
+     * Obtiene el conteo de productos
+     * 
+     * @return el conteo de productos
+     */
+    public int contarProductos() {
         int count = 0;
 
-        try (Connection con = ConexionBBDD.obtenerConexion();
-                Statement st = con.createStatement();
-                ResultSet rs = st.executeQuery(sql)) {
-
-            if (rs.next()) {
-                count = rs.getInt(1);
-            }
+        try (EntityManager em = JPAUtil.getEntityManager();) {
+            count = em.createQuery("SELECT COUNT(p) FROM Producto p", Long.class).getSingleResult().intValue();
         }
         return count;
     }
 
-    public List<Producto> buscarPorCampo(String campo, Object valor) throws SQLException, DatoInvalidoException {
-        // Validation of field name to prevent SQL Injection could be here, strict
-        // whitelist
-        String sql = "SELECT id_producto, nombre, descripcion, precio, stock FROM producto WHERE " + campo + " = ?";
+    /**
+     * Busca productos por campo
+     * 
+     * @param campo el campo a buscar
+     * @param valor el valor a buscar
+     * @return la lista de productos encontrados
+     */
+    public List<Producto> buscarPorCampo(String campo, Object valor) {
+        List<Producto> productos = Collections.emptyList();
 
-        List<Producto> productos = new ArrayList<>();
+        try (EntityManager em = JPAUtil.getEntityManager();) {
+            String campoEntidad = campo;
+            if ("id_producto".equals(campo))
+                campoEntidad = "id";
 
-        try (Connection con = ConexionBBDD.obtenerConexion();
-                PreparedStatement ps = con.prepareStatement(sql)) {
-
-            ps.setObject(1, valor);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Producto p = new Producto(
-                            rs.getInt("id_producto"),
-                            rs.getString("nombre"),
-                            rs.getString("descripcion"),
-                            rs.getDouble("precio"),
-                            rs.getInt("stock"));
-                    productos.add(p);
-                }
+            // Verificamos campos válidos para evitar errores de JPQL
+            if (!isValidField(campoEntidad)) {
+                // Si el campo no es válido, devolvemos lista vacía
+                // O podríamos lanzar excepción.
+                return productos;
             }
+
+            String jpql = "SELECT p FROM Producto p WHERE p." + campoEntidad + " = :valor";
+            TypedQuery<Producto> query = em.createQuery(jpql, Producto.class);
+            query.setParameter("valor", valor);
+            productos = query.getResultList();
         }
         return productos;
     }
 
-    public boolean actualizarProductoCampo(int idProducto, String campo, Object valor) throws SQLException {
+    /**
+     * Verifica si un campo es válido
+     * 
+     * @param field el campo a verificar
+     * @return true si el campo es válido, false en caso contrario
+     */
+    private boolean isValidField(String field) {
+        return List.of("id", "nombre", "descripcion", "precio", "stock").contains(field);
+    }
+
+    /**
+     * Actualiza un producto por campo
+     * 
+     * @param idProducto el ID del producto
+     * @param campo      el campo a actualizar
+     * @param valor      el valor a actualizar
+     * @return true si se actualizó el producto, false en caso contrario
+     */
+    public boolean actualizarProductoCampo(int idProducto, String campo, Object valor) {
         boolean actualizado = false;
-        String sql = "UPDATE producto SET " + campo + " = ? WHERE id_producto = ?";
+        EntityManager em = JPAUtil.getEntityManager();
+        EntityTransaction tx = em.getTransaction();
+        try {
+            tx.begin();
+            Producto p = em.find(Producto.class, idProducto);
+            if (p != null) {
+                boolean campoValido = true;
+                switch (campo) {
+                    case "nombre" -> p.setNombre((String) valor);
+                    case "descripcion" -> p.setDescripcion((String) valor);
+                    case "precio" -> p.setPrecio(Double.parseDouble(valor.toString()));
+                    case "stock" -> p.setStock(Integer.parseInt(valor.toString()));
+                    default -> campoValido = false;
+                }
 
-        try (Connection con = ConexionBBDD.obtenerConexion();
-                PreparedStatement ps = con.prepareStatement(sql)) {
-
-            ps.setObject(1, valor);
-            ps.setInt(2, idProducto);
-
-            int filasAfectadas = ps.executeUpdate();
-            actualizado = filasAfectadas > 0;
+                if (campoValido) {
+                    tx.commit();
+                    actualizado = true;
+                } else {
+                    tx.rollback();
+                }
+            } else {
+                tx.rollback();
+            }
+        } catch (Exception e) {
+            if (tx.isActive())
+                tx.rollback();
+            e.printStackTrace();
+        } finally {
+            em.close();
         }
         return actualizado;
     }
 
-    public boolean eliminarProducto(int idProducto) throws SQLException {
+    /**
+     * Elimina un producto
+     * 
+     * @param idProducto el ID del producto
+     * @return true si se eliminó el producto, false en caso contrario
+     */
+    public boolean eliminarProducto(int idProducto) {
         boolean eliminado = false;
-        String sql = "DELETE FROM producto WHERE id_producto = ?";
-
-        try (Connection con = ConexionBBDD.obtenerConexion();
-                PreparedStatement ps = con.prepareStatement(sql)) {
-
-            ps.setInt(1, idProducto);
-            eliminado = ps.executeUpdate() > 0;
+        EntityManager em = JPAUtil.getEntityManager();
+        EntityTransaction tx = em.getTransaction();
+        try {
+            tx.begin();
+            Producto p = em.find(Producto.class, idProducto);
+            if (p != null) {
+                em.remove(p);
+                tx.commit();
+                eliminado = true;
+            } else {
+                tx.rollback();
+            }
+        } catch (Exception e) {
+            if (tx.isActive())
+                tx.rollback();
+        } finally {
+            em.close();
         }
         return eliminado;
     }
 
-    public List<Producto> obtenerProductos() throws SQLException {
-        List<Producto> productos = new ArrayList<>();
-        String sql = "SELECT id_producto, nombre, descripcion, precio, stock FROM producto";
+    /**
+     * Obtiene todos los productos
+     * 
+     * @return la lista de productos
+     */
+    public List<Producto> obtenerProductos() {
+        List<Producto> productos;
 
-        try (Connection con = ConexionBBDD.obtenerConexion();
-                Statement st = con.createStatement();
-                ResultSet rs = st.executeQuery(sql)) {
-
-            while (rs.next()) {
-                try {
-                    Producto p = new Producto(
-                            rs.getInt("id_producto"),
-                            rs.getString("nombre"),
-                            rs.getString("descripcion"),
-                            rs.getDouble("precio"),
-                            rs.getInt("stock"));
-
-                    productos.add(p);
-                } catch (DatoInvalidoException e) {
-                    System.err.println("Database inconsistency for Product ID " + rs.getInt("id_producto") + ": "
-                            + e.getMessage());
-                }
-            }
+        try (EntityManager em = JPAUtil.getEntityManager();) {
+            productos = em.createQuery("SELECT p FROM Producto p", Producto.class).getResultList();
         }
         return productos;
     }
 
-    public boolean insertarProducto(Producto producto) throws SQLException {
+    /**
+     * Inserta un producto
+     * 
+     * @param producto el producto a insertar
+     * @return true si se insertó el producto, false en caso contrario
+     */
+    public boolean insertarProducto(Producto producto) {
         boolean insertado = false;
-        String sql = "INSERT INTO producto (nombre, descripcion, precio, stock) VALUES (?, ?, ?, ?)";
-
-        try (Connection con = ConexionBBDD.obtenerConexion();
-                PreparedStatement ps = con.prepareStatement(sql)) {
-
-            ps.setString(1, producto.getNombre());
-            ps.setString(2, producto.getDescripcion());
-            ps.setDouble(3, producto.getPrecio());
-            ps.setInt(4, producto.getStock());
-
-            insertado = ps.executeUpdate() > 0;
+        EntityManager em = JPAUtil.getEntityManager();
+        EntityTransaction tx = em.getTransaction();
+        try {
+            tx.begin();
+            em.persist(producto);
+            tx.commit();
+            insertado = true;
+        } catch (Exception e) {
+            if (tx.isActive())
+                tx.rollback();
+            e.printStackTrace();
+        } finally {
+            em.close();
         }
         return insertado;
     }

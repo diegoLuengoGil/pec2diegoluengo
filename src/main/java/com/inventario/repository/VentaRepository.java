@@ -1,146 +1,170 @@
 package com.inventario.repository;
 
-import java.sql.CallableStatement;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.inventario.bbdd.ConexionBBDD;
+import com.inventario.model.Cliente;
 import com.inventario.model.DetalleVenta;
+import com.inventario.model.Producto;
+import com.inventario.model.Venta;
+import com.inventario.util.JPAUtil;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityTransaction;
 
-// DTO helper for ResumenVenta
-// Ideally this should be in com.inventario.dto but I'll use a simple inner class or pass Object[] if avoiding new packages?
-// Unclean to return Object[]. 
-// I will create a VentaResumen class in model or just use Venta if adaptable. 
-// Venta.java might be simple.
-
+/**
+ * Clase que representa el repositorio de ventas
+ */
 public class VentaRepository {
 
-    public List<String> obtenerResumenVentas() throws SQLException {
-        // Returning formatted strings for simplicity to replace "imprimirResumenVentas"
-        // quickly.
-        // A better approach would be returning a List<VentaDTO>
-        String sql = "SELECT v.id_venta, v.id_cliente, c.nombre "
-                + "FROM venta v JOIN cliente c ON v.id_cliente = c.id_cliente "
-                + "ORDER BY v.id_venta DESC";
+    /**
+     * Obtiene un resumen de las ventas
+     * 
+     * @return la lista de ventas
+     */
+    public List<String> obtenerResumenVentas() {
         List<String> resumen = new ArrayList<>();
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            // JPQL para traer ventas y clientes (join fetch opcional para optimizar)
+            List<Venta> ventas = em
+                    .createQuery("SELECT v FROM Venta v JOIN FETCH v.cliente ORDER BY v.id DESC", Venta.class)
+                    .getResultList();
 
-        try (Connection con = ConexionBBDD.obtenerConexion();
-                Statement st = con.createStatement();
-                ResultSet rs = st.executeQuery(sql)) {
-
-            while (rs.next()) {
+            for (Venta v : ventas) {
                 resumen.add(String.format("%-5d | %-10d | %s",
-                        rs.getInt("id_venta"),
-                        rs.getInt("id_cliente"),
-                        rs.getString("nombre")));
+                        v.getId(),
+                        v.getCliente().getId(),
+                        v.getCliente().getNombre()));
             }
+        } finally {
+            em.close();
         }
         return resumen;
     }
 
-    public List<String> obtenerDetallesVenta(int idVenta) throws SQLException {
-        String sql = "SELECT d.cantidad, d.precio_unitario, p.nombre "
-                + "FROM DetalleVenta d JOIN producto p ON d.id_producto = p.id_producto "
-                + "WHERE d.id_venta = ?";
+    /**
+     * Obtiene los detalles de una venta
+     * 
+     * @param idVenta el ID de la venta
+     * @return la lista de detalles de la venta
+     */
+    public List<String> obtenerDetallesVenta(int idVenta) {
         List<String> detalles = new ArrayList<>();
-
-        try (Connection con = ConexionBBDD.obtenerConexion();
-                PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, idVenta);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    int cantidad = rs.getInt("cantidad");
-                    double precio = rs.getDouble("precio_unitario");
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            Venta venta = em.find(Venta.class, idVenta);
+            if (venta != null) {
+                for (DetalleVenta d : venta.getDetalles()) {
                     detalles.add(String.format("%-25s | %-10d | %-10.2f | %.2f",
-                            rs.getString("nombre"),
-                            cantidad,
-                            precio,
-                            (cantidad * precio)));
+                            d.getProducto().getNombre(),
+                            d.getCantidad(),
+                            d.getPrecioUnitario(),
+                            (d.getCantidad() * d.getPrecioUnitario())));
                 }
             }
+        } finally {
+            em.close();
         }
         return detalles;
     }
 
-    public double calcularTotalVenta(int idVenta) throws SQLException {
+    /**
+     * Calcula el total de una venta
+     * 
+     * @param idVenta el ID de la venta
+     * @return el total de la venta
+     */
+    public double calcularTotalVenta(int idVenta) {
+        // En JPA podemos calcularlo en memoria o con una consulta.
+        // Consulta para sumar:
         double total = 0.0;
-        String sql = "{? = CALL CalcularTotalVenta(?)}";
-
-        try (Connection con = ConexionBBDD.obtenerConexion();
-                CallableStatement cs = con.prepareCall(sql)) {
-            cs.registerOutParameter(1, Types.DECIMAL);
-            cs.setInt(2, idVenta);
-            cs.execute();
-            total = cs.getDouble(1);
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            Double res = em.createQuery(
+                    "SELECT SUM(d.cantidad * d.precioUnitario) FROM DetalleVenta d WHERE d.venta.id = :idVenta",
+                    Double.class)
+                    .setParameter("idVenta", idVenta)
+                    .getSingleResult();
+            if (res != null) {
+                total = res;
+            }
+        } finally {
+            em.close();
         }
         return total;
     }
 
-    public int insertarCabeceraVenta(int idCliente) throws SQLException {
-        int idVenta = -1;
-        String sql = "INSERT INTO venta (id_cliente) VALUES (?)";
+    /**
+     * Realiza una venta completa
+     * 
+     * @param idCliente   el ID del cliente
+     * @param detallesDTO la lista de detalles de la venta
+     */
+    public void realizarVentaCompleta(int idCliente, List<DetalleVenta> detallesDTO) {
+        EntityManager em = JPAUtil.getEntityManager();
+        EntityTransaction tx = em.getTransaction();
 
-        try (PreparedStatement ps = ConexionBBDD.obtenerConexion().prepareStatement(sql,
-                PreparedStatement.RETURN_GENERATED_KEYS)) {
-            ps.setInt(1, idCliente);
-            if (ps.executeUpdate() > 0) {
-                try (ResultSet rs = ps.getGeneratedKeys()) {
-                    if (rs.next()) {
-                        idVenta = rs.getInt(1);
+        try {
+            tx.begin();
+
+            // 1. Obtener Cliente
+            Cliente cliente = em.find(Cliente.class, idCliente);
+            if (cliente == null) {
+                System.out.println("Cliente no encontrado.");
+            } else {
+                // 2. Crear Venta
+                Venta venta = new Venta(cliente);
+                // No persistimos venta aún, la guardaremos en cascada o al final.
+                // Pero necesitamos la instancia para asociarla.
+                em.persist(venta); // Persistimos para tener ID si fuera necesario o gestionado.
+
+                double totalVenta = 0.0;
+
+                // 3. Procesar Detalles (Stock y Total)
+                for (DetalleVenta dTemp : detallesDTO) {
+                    // El objeto DetalleVenta viene "suelto" del controlador/vista (solo con IDs).
+                    // dTemp.getProducto() es dummy con ID.
+                    Producto producto = em.find(Producto.class, dTemp.getProducto().getId());
+
+                    if (producto == null) {
+                        throw new Exception("Producto no encontrado: ID " + dTemp.getProducto().getId());
                     }
+
+                    if (producto.getStock() < dTemp.getCantidad()) {
+                        throw new Exception("Stock insuficiente para: " + producto.getNombre());
+                    }
+
+                    // Actualizar Stock
+                    producto.setStock(producto.getStock() - dTemp.getCantidad());
+                    // em.merge(producto); // Innecesario si está gestionado (find lo deja
+                    // gestionado)
+
+                    // Crear el Detalle real asociado
+                    DetalleVenta detalleReal = new DetalleVenta(venta, producto, dTemp.getCantidad(),
+                            producto.getPrecio());
+                    venta.addDetalle(detalleReal); // Helper method que sincroniza
+
+                    // Si no usamos cascade ALL, tendríamos que: em.persist(detalleReal);
+
+                    totalVenta += (dTemp.getCantidad() * producto.getPrecio());
                 }
-            }
-        }
 
-        if (idVenta == -1) {
-            throw new SQLException("Error generating sale ID.");
-        }
-        return idVenta;
-    }
-
-    public double procesarDetalles(Connection con, int idVenta, List<DetalleVenta> detalles) throws SQLException {
-        double totalVenta = 0.0;
-        String sqlSP = "{CALL RegistrarDetalleVenta(?, ?, ?, ?, ?)}";
-
-        try (CallableStatement cs = con.prepareCall(sqlSP)) {
-            for (DetalleVenta detalle : detalles) {
-                double subtotal = detalle.getCantidad() * detalle.getPrecioUnitario();
-
-                cs.setInt(1, idVenta);
-                cs.setInt(2, detalle.getIdProducto());
-                cs.setInt(3, detalle.getCantidad());
-                cs.setDouble(4, detalle.getPrecioUnitario());
-                cs.registerOutParameter(5, Types.INTEGER);
-                cs.execute();
-
-                int estado = cs.getInt(5);
-
-                if (estado == 1) {
-                    totalVenta += subtotal;
-                } else {
-                    String error = (estado == -1) ? "Insufficient stock" : "Product not found";
-                    throw new SQLException("Error processing product ID " + detalle.getIdProducto() + ": " + error);
+                // 4. Cobrar al Cliente
+                if (cliente.getDinero() < totalVenta) {
+                    throw new Exception("Saldo insuficiente del cliente.");
                 }
-            }
-        }
-        return totalVenta;
-    }
+                cliente.setDinero(cliente.getDinero() - totalVenta);
 
-    public void cobrarCliente(Connection con, int idCliente, double cantidad) throws SQLException {
-        String sql = "UPDATE cliente SET dinero = dinero - ? WHERE id_cliente = ?";
-        try (PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setDouble(1, cantidad);
-            ps.setInt(2, idCliente);
-            if (ps.executeUpdate() == 0) {
-                throw new SQLException("Error updating balance. Verify client or funds.");
+                // 5. Commit
+                tx.commit();
             }
+
+        } catch (Exception e) {
+            if (tx.isActive()) {
+                tx.rollback();
+            }
+        } finally {
+            em.close();
         }
     }
 }

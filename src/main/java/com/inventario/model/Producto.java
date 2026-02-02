@@ -7,7 +7,7 @@ import jakarta.persistence.*;
  * Clase que representa un producto con sus atributos y métodos.
  */
 @Entity
-@Table(name = "producto")
+@Table(name = "Producto")
 public class Producto {
     /**
      * ID del producto.

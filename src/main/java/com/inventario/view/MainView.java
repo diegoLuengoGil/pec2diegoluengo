@@ -4,6 +4,9 @@ import java.util.Scanner;
 
 import com.inventario.util.Util;
 
+/**
+ * Clase que representa la vista principal
+ */
 public class MainView {
 
     private final Scanner scanner;
@@ -12,6 +15,11 @@ public class MainView {
         this.scanner = scanner;
     }
 
+    /**
+     * Muestra el menú principal
+     * 
+     * @return la opción seleccionada
+     */
     public int mostrarMenuPrincipal() {
         System.out.println("\n========== MENÚ PRINCIPAL ==========");
         System.out.println("1. Gestión de productos");

@@ -2,7 +2,6 @@ package com.inventario.controller;
 
 import java.util.Scanner;
 
-import com.inventario.bbdd.ConexionBBDD;
 import com.inventario.repository.ClienteRepository;
 import com.inventario.repository.ProductoRepository;
 import com.inventario.repository.VentaRepository;
@@ -13,7 +12,11 @@ import com.inventario.view.ClienteView;
 import com.inventario.view.MainView;
 import com.inventario.view.ProductoView;
 import com.inventario.view.VentaView;
+import com.inventario.util.JPAUtil;
 
+/**
+ * Clase que gestiona el controlador principal.
+ */
 public class MainController {
 
     private MainView mainView;
@@ -22,6 +25,9 @@ public class MainController {
     private VentaController ventaController;
     private Scanner scanner;
 
+    /**
+     * Constructor de la clase MainController.
+     */
     public MainController() {
         this.scanner = new Scanner(System.in);
         this.mainView = new MainView(scanner);
@@ -47,7 +53,7 @@ public class MainController {
     }
 
     public void iniciar() {
-        ConexionBBDD.iniciarConexion();
+        // JPA se inicializa automáticamente al cargar JPAUtil
         int opcion;
 
         do {
@@ -58,7 +64,10 @@ public class MainController {
                 case 2 -> clienteController.iniciar();
                 case 3 -> ventaController.crearVenta();
                 case 4 -> ventaController.menuConsultas();
-                case 0 -> mainView.mostrarMensaje("\nSaliendo del programa...");
+                case 0 -> {
+                    mainView.mostrarMensaje("\nSaliendo del programa...");
+                    JPAUtil.close(); // Cerrar EntityManagerFactory al salir
+                }
                 default -> mainView.mostrarMensaje("Opción no válida.");
             }
         } while (opcion != 0);

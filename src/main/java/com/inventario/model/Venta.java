@@ -8,7 +8,7 @@ import jakarta.persistence.*;
  * Clase que representa una venta.
  */
 @Entity
-@Table(name = "venta")
+@Table(name = "Venta")
 public class Venta {
     /** Identificador de la venta */
     @Id
@@ -16,27 +16,48 @@ public class Venta {
     @Column(name = "id_venta")
     private int id;
 
+    /** Cliente de la venta */
     @ManyToOne
     @JoinColumn(name = "id_cliente", nullable = false)
     private Cliente cliente;
 
+    /** Detalles de la venta */
     @OneToMany(mappedBy = "venta", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DetalleVenta> detalles = new ArrayList<>();
 
+    /**
+     * Obtiene la lista de detalles de la venta.
+     * 
+     * @return la lista de detalles de la venta
+     */
     public List<DetalleVenta> getDetalles() {
         return detalles;
     }
 
+    /**
+     * Establece la lista de detalles de la venta.
+     * 
+     * @param detalles la lista de detalles de la venta
+     */
     public void setDetalles(List<DetalleVenta> detalles) {
         this.detalles = detalles;
     }
 
-    // 🔹 MÉTODOS DE CONVENIENCIA (MUY IMPORTANTE)
+    /**
+     * Agrega un detalle a la venta.
+     * 
+     * @param d el detalle a agregar
+     */
     public void addDetalle(DetalleVenta d) {
         detalles.add(d);
         d.setVenta(this);
     }
 
+    /**
+     * Elimina un detalle de la venta.
+     * 
+     * @param d el detalle a eliminar
+     */
     public void removeDetalle(DetalleVenta d) {
         detalles.remove(d);
         d.setVenta(null);

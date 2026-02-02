@@ -9,6 +9,11 @@ import com.inventario.controller.MainController;
  */
 public class Main {
 
+    /**
+     * Punto de entrada del programa
+     * 
+     * @param args argumentos de la línea de comandos
+     */
     public static void main(String[] args) {
         MainController mainController = new MainController();
         mainController.iniciar();

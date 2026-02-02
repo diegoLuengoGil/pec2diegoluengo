@@ -1,5 +1,7 @@
 package com.inventario.model;
 
+import java.util.List;
+import java.util.ArrayList;
 import jakarta.persistence.*;
 
 /**
@@ -19,13 +21,13 @@ public class Venta {
     private Cliente cliente;
 
     @OneToMany(mappedBy = "venta", cascade = CascadeType.ALL, orphanRemoval = true)
-    private java.util.List<DetalleVenta> detalles = new java.util.ArrayList<>();
+    private List<DetalleVenta> detalles = new ArrayList<>();
 
-    public java.util.List<DetalleVenta> getDetalles() {
+    public List<DetalleVenta> getDetalles() {
         return detalles;
     }
 
-    public void setDetalles(java.util.List<DetalleVenta> detalles) {
+    public void setDetalles(List<DetalleVenta> detalles) {
         this.detalles = detalles;
     }
 

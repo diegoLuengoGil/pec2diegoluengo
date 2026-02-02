@@ -37,6 +37,32 @@ public class DetalleVenta {
     public DetalleVenta() {
     }
 
+    // Métodos de compatibilidad
+    public int getIdVenta() {
+        return venta != null ? venta.getId() : 0;
+    }
+
+    public int getIdProducto() {
+        return producto != null ? producto.getId() : 0;
+    }
+
+    // Setters de compatibilidad (para VentaRepository JDBC)
+    public void setIdVenta(int idVenta) {
+        if (this.venta == null)
+            this.venta = new Venta();
+        this.venta.setId(idVenta);
+    }
+
+    public void setIdProducto(int idProducto) {
+        if (this.producto == null)
+            this.producto = new Producto();
+        this.producto.setId(idProducto);
+    }
+
+    /*
+     * Aqui empieza el modelo original
+     */
+
     /**
      * Constructor para crear un nuevo detalle de venta con objetos.
      * 
@@ -154,27 +180,5 @@ public class DetalleVenta {
 
     public void setPrecioUnitario(double precioUnitario) {
         this.precioUnitario = precioUnitario;
-    }
-
-    // Métodos de compatibilidad
-    public int getIdVenta() {
-        return venta != null ? venta.getId() : 0;
-    }
-
-    public int getIdProducto() {
-        return producto != null ? producto.getId() : 0;
-    }
-
-    // Setters de compatibilidad (para VentaRepository JDBC)
-    public void setIdVenta(int idVenta) {
-        if (this.venta == null)
-            this.venta = new Venta();
-        this.venta.setId(idVenta);
-    }
-
-    public void setIdProducto(int idProducto) {
-        if (this.producto == null)
-            this.producto = new Producto();
-        this.producto.setId(idProducto);
     }
 }

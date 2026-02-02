@@ -117,16 +117,13 @@ public class VentaRepository {
             } else {
                 // 2. Crear Venta
                 Venta venta = new Venta(cliente);
-                // No persistimos venta aún, la guardaremos en cascada o al final.
-                // Pero necesitamos la instancia para asociarla.
-                em.persist(venta); // Persistimos para tener ID si fuera necesario o gestionado.
+                em.persist(venta);
 
                 double totalVenta = 0.0;
 
                 // 3. Procesar Detalles (Stock y Total)
                 for (DetalleVenta dTemp : detallesDTO) {
-                    // El objeto DetalleVenta viene "suelto" del controlador/vista (solo con IDs).
-                    // dTemp.getProducto() es dummy con ID.
+
                     Producto producto = em.find(Producto.class, dTemp.getProducto().getId());
 
                     if (producto == null) {
@@ -137,17 +134,11 @@ public class VentaRepository {
                         throw new Exception("Stock insuficiente para: " + producto.getNombre());
                     }
 
-                    // Actualizar Stock
                     producto.setStock(producto.getStock() - dTemp.getCantidad());
-                    // em.merge(producto); // Innecesario si está gestionado (find lo deja
-                    // gestionado)
 
-                    // Crear el Detalle real asociado
                     DetalleVenta detalleReal = new DetalleVenta(venta, producto, dTemp.getCantidad(),
                             producto.getPrecio());
-                    venta.addDetalle(detalleReal); // Helper method que sincroniza
-
-                    // Si no usamos cascade ALL, tendríamos que: em.persist(detalleReal);
+                    venta.addDetalle(detalleReal);
 
                     totalVenta += (dTemp.getCantidad() * producto.getPrecio());
                 }

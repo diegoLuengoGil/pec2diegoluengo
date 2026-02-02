@@ -11,6 +11,8 @@ import com.inventario.util.JPAUtil;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityTransaction;
 
+import com.inventario.excepciones.SaldoInsuficienteException;
+
 /**
  * Clase que representa el repositorio de ventas
  */
@@ -100,7 +102,8 @@ public class VentaRepository {
      * @param idCliente   el ID del cliente
      * @param detallesDTO la lista de detalles de la venta
      */
-    public void realizarVentaCompleta(int idCliente, List<DetalleVenta> detallesDTO) {
+    public void realizarVentaCompleta(int idCliente, List<DetalleVenta> detallesDTO)
+            throws SaldoInsuficienteException {
         EntityManager em = JPAUtil.getEntityManager();
         EntityTransaction tx = em.getTransaction();
 
@@ -151,7 +154,9 @@ public class VentaRepository {
 
                 // 4. Cobrar al Cliente
                 if (cliente.getDinero() < totalVenta) {
-                    throw new Exception("Saldo insuficiente del cliente.");
+                    throw new SaldoInsuficienteException(
+                            String.format("Saldo insuficiente. Total: %.2f, Saldo: %.2f", totalVenta,
+                                    cliente.getDinero()));
                 }
                 cliente.setDinero(cliente.getDinero() - totalVenta);
 
@@ -159,6 +164,11 @@ public class VentaRepository {
                 tx.commit();
             }
 
+        } catch (SaldoInsuficienteException e) {
+            if (tx.isActive()) {
+                tx.rollback();
+            }
+            throw e; // Re-lanzamos la específica
         } catch (Exception e) {
             if (tx.isActive()) {
                 tx.rollback();

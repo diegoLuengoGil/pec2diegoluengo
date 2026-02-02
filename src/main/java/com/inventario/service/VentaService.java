@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.inventario.model.DetalleVenta;
 import com.inventario.repository.VentaRepository;
+import com.inventario.excepciones.SaldoInsuficienteException;
 
 /**
  * Clase que representa el servicio de ventas
@@ -29,8 +30,9 @@ public class VentaService {
      * 
      * @param idCliente el ID del cliente
      * @param detalles  la lista de detalles de la venta
+     * @throws SaldoInsuficienteException si el cliente no tiene saldo suficiente
      */
-    public void realizarVenta(int idCliente, List<DetalleVenta> detalles) {
+    public void realizarVenta(int idCliente, List<DetalleVenta> detalles) throws SaldoInsuficienteException {
         ventaRepository.realizarVentaCompleta(idCliente, detalles);
     }
 

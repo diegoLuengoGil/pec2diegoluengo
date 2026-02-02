@@ -122,28 +122,58 @@ public class VentaController {
             int opcion;
 
             do {
-                productoView.mostrarProductos(productos);
-                int idProd = ventaView.pedirIdProducto();
-
-                try {
-                    Producto p = productoService.buscarProductoPorId(idProd);
-                    if (p != null) {
-                        if (p.getStock() > 0) {
-                            int cant = ventaView.pedirCantidad(p.getStock());
-                            detalles.add(new DetalleVenta(0, 0, p.getId(), cant, p.getPrecio()));
-                            totalEstimado += (p.getPrecio() * cant);
-                            ventaView.mostrarMensaje("Añadido: " + p.getNombre() + " x" + cant);
-                        } else {
-                            ventaView.mostrarMensaje("Stock agotado para este producto.");
+                List<Producto> productosDisponibles = new ArrayList<>();
+                for (Producto p : productos) {
+                    boolean yaAnadido = false;
+                    for (DetalleVenta d : detalles) {
+                        if (d.getIdProducto() == p.getId()) {
+                            yaAnadido = true;
                         }
-                    } else {
-                        ventaView.mostrarMensaje("Producto no encontrado.");
                     }
-                } catch (DatoInvalidoException e) {
-                    ventaView.mostrarMensaje("Error en datos del producto: " + e.getMessage());
+                    if (!yaAnadido) {
+                        productosDisponibles.add(p);
+                    }
                 }
 
-                opcion = ventaView.pedirSiNo("¿Añadir otro producto?");
+                if (productosDisponibles.isEmpty()) {
+                    ventaView.mostrarMensaje("No quedan más productos disponibles para añadir.");
+                    opcion = 2; // Salir del bucle
+                } else {
+                    productoView.mostrarProductos(productosDisponibles); // Mostrar solo disponibles
+                    int idProd = ventaView.pedirIdProducto();
+
+                    // Verificar que el ID seleccionado sea de los disponibles
+                    boolean esValido = false;
+                    for (Producto p : productosDisponibles) {
+                        if (p.getId() == idProd) {
+                            esValido = true;
+                        }
+                    }
+
+                    if (esValido) {
+                        try {
+                            Producto p = productoService.buscarProductoPorId(idProd);
+                            if (p != null) {
+                                if (p.getStock() > 0) {
+                                    int cant = ventaView.pedirCantidad(p.getStock());
+                                    detalles.add(new DetalleVenta(0, 0, p.getId(), cant, p.getPrecio()));
+                                    totalEstimado += (p.getPrecio() * cant);
+                                    ventaView.mostrarMensaje("Añadido: " + p.getNombre() + " x" + cant);
+                                } else {
+                                    ventaView.mostrarMensaje("Stock agotado para este producto.");
+                                }
+                            } else {
+                                ventaView.mostrarMensaje("Producto no encontrado.");
+                            }
+                        } catch (DatoInvalidoException e) {
+                            ventaView.mostrarMensaje("Error en datos del producto: " + e.getMessage());
+                        }
+                        opcion = ventaView.pedirSiNo("¿Añadir otro producto?");
+                    } else {
+                        ventaView.mostrarMensaje("Producto no válido o ya añadido (selecciona de la lista mostrada).");
+                        opcion = 1; // Volver a intentarlo
+                    }
+                }
             } while (opcion == 1);
 
             if (detalles.isEmpty()) {
@@ -153,9 +183,15 @@ public class VentaController {
                 ventaView.mostrarMensaje(String.format("\n>> TOTAL A PAGAR: %.2f €", totalEstimado));
                 if (ventaView.pedirSiNo("¿Confirmar venta y realizar cobro?") == 1) {
 
-                    ventaService.realizarVenta(idCliente, detalles);
-                    ventaView.mostrarMensaje(
-                            "¡Venta realizada con éxito! Inventario actualizado y saldo descontado.");
+                    try {
+                        ventaService.realizarVenta(idCliente, detalles);
+                        ventaView.mostrarMensaje(
+                                "¡Venta realizada con éxito! Inventario actualizado y saldo descontado.");
+                    } catch (com.inventario.excepciones.SaldoInsuficienteException e) {
+                        ventaView.mostrarError("Error: " + e.getMessage());
+                    } catch (Exception e) {
+                        ventaView.mostrarError("Error al realizar la venta: " + e.getMessage());
+                    }
 
                 } else {
                     ventaView.mostrarMensaje("Venta cancelada por el usuario.");
